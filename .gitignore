@@ -1,0 +1,50 @@
+# .venv/
+# __pycache__/
+# *.py[cod]
+# .env
+# .pytest_cache/
+# .mypy_cache/
+# .ruff_cache/
+# .ipynb_checkpoints/
+# logs/*
+# data/raw/*
+# data/processed/*
+# data/evaluation/*
+# !data/raw/.gitkeep
+# !data/processed/.gitkeep
+# !data/evaluation/.gitkeep
+
+
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# Environment variables
+.env
+
+# Logs
+logs/*.log
+
+# Data
+data/raw/*
+data/processed/*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test/cache
+.pytest_cache/
+.coverage
+htmlcov/

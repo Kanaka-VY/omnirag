@@ -1,46 +1,64 @@
 from pathlib import Path
 
+from .parser import parse_pdf
 from .cleaner import (
+    normalize_element,
     find_repeated_texts,
     is_repeated_header_or_footer,
-    normalize_element,
 )
-from .parser import parse_pdf
 
 
-def process_pdf(file_path: Path):
-    elements = parse_pdf(file_path)
+def process_pdf(
+    file_path: Path,
+    multimodal: bool = False,
+):
+    """
+    Parse and clean a PDF into normalized DocumentElements.
+    """
 
-    repeated_texts = find_repeated_texts(elements)
+    # ---------------------------------------------------------
+    # Step 1: Parse PDF
+    # ---------------------------------------------------------
+
+    elements = parse_pdf(
+        file_path=file_path,
+        multimodal=multimodal,
+    )
+
+    # ---------------------------------------------------------
+    # Step 2: Find repeated headers and footers
+    # ---------------------------------------------------------
+
+    repeated_texts = find_repeated_texts(
+        elements,
+        minimum_occurrences=3,
+    )
+
+    # ---------------------------------------------------------
+    # Step 3: Normalize elements
+    # ---------------------------------------------------------
+
+    cleaned_elements = []
 
     document_id = file_path.stem
     document_name = file_path.name
 
-    normalized_elements = []
-    current_section = None
-
     for element in elements:
+
+        # Remove repeated headers/footers
         if is_repeated_header_or_footer(
             element,
             repeated_texts,
         ):
             continue
 
-        element_type = type(element).__name__
-
         normalized = normalize_element(
             element=element,
             document_id=document_id,
             document_name=document_name,
-            section=current_section,
         )
 
-        if normalized is None:
-            continue
+        if normalized is not None:
+            cleaned_elements.append(normalized)
 
-        normalized_elements.append(normalized)
-
-        if element_type == "Title":
-            current_section = normalized.text
-
-    return normalized_elements
+    return cleaned_elements

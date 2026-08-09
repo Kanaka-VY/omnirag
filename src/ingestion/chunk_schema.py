@@ -34,3 +34,8 @@ class DocumentChunk:
     content_type: str = "text"
 
     table_data: Optional[str] = None
+
+    content_type: str = "text"
+    table_data: str | None = None
+    image_path: str | None = None
+    visual_description: str | None = None

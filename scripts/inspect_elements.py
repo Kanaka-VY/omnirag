@@ -4,37 +4,87 @@ from pathlib import Path
 from src.ingestion.pipeline import process_pdf
 
 
-DEFAULT_PDF = Path("data/raw/sample.pdf")
+def main():
 
+    # ---------------------------------------------------------
+    # Get PDF path
+    # ---------------------------------------------------------
 
-def main() -> None:
     if len(sys.argv) > 1:
         pdf_path = Path(sys.argv[1])
     else:
-        pdf_path = DEFAULT_PDF
-
-    if not pdf_path.exists():
-        raise FileNotFoundError(
-            f"PDF not found: {pdf_path}"
+        pdf_path = Path(
+            "data/raw/sample.pdf"
         )
 
-    elements = process_pdf(pdf_path)
+    print(f"Processing: {pdf_path}")
 
-    print(f"PDF: {pdf_path}")
-    print(f"Total elements: {len(elements)}")
+    # ---------------------------------------------------------
+    # Normal parsing by default
+    # ---------------------------------------------------------
+
+    elements = process_pdf(
+        pdf_path,
+        multimodal=False,
+    )
+
+    print(
+        f"\nTotal elements: {len(elements)}"
+    )
+
+    # ---------------------------------------------------------
+    # Inspect elements
+    # ---------------------------------------------------------
 
     for index, element in enumerate(
         elements,
         start=1,
     ):
-        print("\n" + "=" * 80)
 
-        print(f"Element #{index}")
-        print(f"Type: {element.element_type}")
-        print(f"ID: {element.element_id}")
-        print(f"Page: {element.page_number}")
         print(
-            f"Text: {(element.text or '')[:500]}"
+            "\n"
+            + "=" * 80
+        )
+
+        print(
+            f"Element #{index}"
+        )
+
+        print(
+            f"Type: "
+            f"{element.element_type}"
+        )
+
+        print(
+            f"ID: "
+            f"{element.element_id}"
+        )
+
+        print(
+            f"Page: "
+            f"{element.page_number}"
+        )
+
+        text = (
+            element.text or ""
+        ).strip()
+
+        print(
+            f"Text: {text[:500]}"
+        )
+
+        # -----------------------------------------------------
+        # Metadata
+        # -----------------------------------------------------
+
+        metadata = getattr(
+            element,
+            "metadata",
+            None,
+        )
+
+        print(
+            f"Metadata: {metadata}"
         )
 
 

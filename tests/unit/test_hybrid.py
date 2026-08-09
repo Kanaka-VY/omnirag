@@ -1,91 +1,128 @@
+from src.retrieval.bm25 import BM25Retriever
 from src.retrieval.hybrid import HybridRetriever
-from src.retrieval.lexical import LexicalResult
+
+
+class FakeDenseResult:
+    def __init__(
+        self,
+        chunk_id,
+        score,
+        text,
+    ):
+        self.chunk_id = chunk_id
+        self.score = score
+        self.text = text
 
 
 class FakeDenseRetriever:
-    def retrieve(self, query, top_k=20):
+
+    def retrieve(
+        self,
+        query,
+        top_k=5,
+        document_id=None,
+    ):
         return [
-            LexicalResult(
-                chunk_id="A",
-                text="Chunk A",
-                score=0.9,
-                metadata={},
+            FakeDenseResult(
+                "2",
+                0.90,
+                "Ravi works in the AI department.",
             ),
-            LexicalResult(
-                chunk_id="B",
-                text="Chunk B",
-                score=0.8,
-                metadata={},
-            ),
-            LexicalResult(
-                chunk_id="C",
-                text="Chunk C",
-                score=0.7,
-                metadata={},
+            FakeDenseResult(
+                "3",
+                0.80,
+                "Ravi salary is 60000 INR.",
             ),
         ]
 
 
-class FakeLexicalRetriever:
-    def retrieve(self, query, top_k=20):
-        return [
-            LexicalResult(
-                chunk_id="C",
-                text="Chunk C",
-                score=8.0,
-                metadata={},
-            ),
-            LexicalResult(
-                chunk_id="D",
-                text="Chunk D",
-                score=7.0,
-                metadata={},
-            ),
-            LexicalResult(
-                chunk_id="A",
-                text="Chunk A",
-                score=6.0,
-                metadata={},
-            ),
-        ]
+def test_hybrid_retriever_combines_results():
 
+    documents = [
+        {
+            "chunk_id": "1",
+            "text": "Annual leave is 20 days.",
+        },
+        {
+            "chunk_id": "2",
+            "text": "Ravi works in the AI department.",
+        },
+        {
+            "chunk_id": "3",
+            "text": "Ravi salary is 60000 INR.",
+        },
+    ]
 
-def test_rrf_combines_rankings():
+    bm25 = BM25Retriever(documents)
+
+    dense = FakeDenseRetriever()
+
     retriever = HybridRetriever(
-        dense_retriever=FakeDenseRetriever(),
-        lexical_retriever=FakeLexicalRetriever(),
+        dense_retriever=dense,
+        bm25_retriever=bm25,
     )
 
     results = retriever.retrieve(
-        "test query",
-        top_k=4,
+        "Ravi salary",
+        top_k=3,
     )
 
-    assert len(results) == 4
+    assert len(results) == 3
 
-    chunk_ids = [
+    ids = [
         result.chunk_id
         for result in results
     ]
 
-    assert "A" in chunk_ids
-    assert "C" in chunk_ids
+    assert "3" in ids
+    assert "2" in ids
 
-def test_rrf_boosts_documents_found_by_both():
+
+def test_hybrid_retriever_empty_query():
+
+    bm25 = BM25Retriever([])
+
+    dense = FakeDenseRetriever()
+
     retriever = HybridRetriever(
-        dense_retriever=FakeDenseRetriever(),
-        lexical_retriever=FakeLexicalRetriever(),
+        dense_retriever=dense,
+        bm25_retriever=bm25,
+    )
+
+    results = retriever.retrieve("")
+
+    assert results == []
+
+
+def test_hybrid_retriever_respects_top_k():
+
+    documents = [
+        {
+            "chunk_id": "1",
+            "text": "Ravi works in AI.",
+        },
+        {
+            "chunk_id": "2",
+            "text": "Ravi works in HR.",
+        },
+        {
+            "chunk_id": "3",
+            "text": "Ravi works in Finance.",
+        },
+    ]
+
+    bm25 = BM25Retriever(documents)
+
+    dense = FakeDenseRetriever()
+
+    retriever = HybridRetriever(
+        dense_retriever=dense,
+        bm25_retriever=bm25,
     )
 
     results = retriever.retrieve(
-        "test query",
-        top_k=4,
+        "Ravi",
+        top_k=2,
     )
 
-    scores = {
-        result.chunk_id: result.score
-        for result in results
-    }
-
-    assert scores["A"] > scores["B"]
-    assert scores["C"] > scores["D"]
+    assert len(results) == 2

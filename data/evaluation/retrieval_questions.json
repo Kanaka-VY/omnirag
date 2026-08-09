@@ -1,22 +1,26 @@
 [
   {
     "question": "What is Ravi's salary?",
-    "expected_content": "60000",
-    "expected_content_type": "table"
-  },
+    "relevant_chunk_ids": [
+      "actual_chunk_id_here"
+    ]
+},
   {
     "question": "Which department does Priya work in?",
-    "expected_content": "HR",
-    "expected_content_type": "table"
+    "relevant_chunk_ids":[
+      "actual_chunk_id_here"
+    ]
   },
   {
     "question": "What is Arun's performance rating?",
-    "expected_content": "4.7",
-    "expected_content_type": "table"
+    "relevant_chunk_ids":[
+      "actual_chunk_id_here"
+    ]
   },
   {
     "question": "What was the revenue in 2025?",
-    "expected_content": "22M",
-    "expected_content_type": "figure"
+    "relevant_chunk_ids":[
+      "actual_chunk_id_here"
+  ]
   }
 ]

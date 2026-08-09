@@ -1,5 +1,6 @@
 from src.generation.generator import RAGGenerator
 from src.retrieval.models import RetrievedChunk
+from src.generation.prompts import build_prompt
 
 
 class FakeLLM:
@@ -59,3 +60,14 @@ def test_generator_handles_no_context():
     assert result.sources == []
 
     assert "could not find" in result.answer.lower()
+
+def test_grounded_prompt_contains_context():
+
+    prompt = build_prompt(
+        question="What is Ravi's salary?",
+        context="Ravi's salary is 60000.",
+    )
+
+    assert "Ravi's salary is 60000." in prompt
+    assert "What is Ravi's salary?" in prompt
+    assert "ONLY" in prompt

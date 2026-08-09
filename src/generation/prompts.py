@@ -24,5 +24,34 @@ User question:
 Retrieved context:
 {context}
 
-Answer the question using only the retrieved context.
+Answer the question using ONLY the retrieved context.
 """
+
+def build_prompt(
+    question: str,
+    context: str,
+) -> str:
+    """
+    Build a grounded prompt using the question and
+    retrieved context.
+
+    Kept as a simple public helper for prompt testing.
+    """
+
+    return build_user_prompt(
+        query=question,
+        context=context,
+    )
+
+def build_prompt(
+    question: str,
+    context: str,
+) -> str:
+    """
+    Build a grounded prompt using the question and context.
+    """
+
+    return build_user_prompt(
+        query=question,
+        context=context,
+    )

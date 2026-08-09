@@ -1,6 +1,7 @@
 from typing import Any
 
 from qdrant_client import QdrantClient
+from qdrant_client import models
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
 
@@ -69,14 +70,34 @@ class QdrantRepository:
         self,
         query_vector: list[float],
         limit: int = 5,
+        document_id: str | None = None,
     ):
         """
         Search for the most similar vectors.
+
+        Optionally restrict the search to a specific document.
         """
 
-        return self.client.query_points(
+        query_filter = None
+
+        if document_id:
+            query_filter = models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="document_id",
+                        match=models.MatchValue(
+                            value=document_id
+                        ),
+                    )
+                ]
+            )
+
+        response = self.client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
-            limit=limit,
+            query_filter=query_filter,
             with_payload=True,
+            limit=limit,
         )
+
+        return response.points

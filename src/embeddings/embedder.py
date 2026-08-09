@@ -18,8 +18,9 @@ class EmbeddingModel:
         Convert text into embedding vectors.
 
         Returns:
-            NumPy array containing the embedding vectors.
+            NumPy array containing embedding vectors.
         """
+
         return self.model.encode(
             texts,
             convert_to_numpy=True,
@@ -30,4 +31,5 @@ class EmbeddingModel:
         """
         Return the dimensionality of the embedding vectors.
         """
-        return self.model.get_sentence_embedding_dimension()
+
+        return self.model.get_embedding_dimension()

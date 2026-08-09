@@ -1,18 +1,19 @@
 import json
+from dataclasses import asdict
 from pathlib import Path
 
-from src.ingestion.parser import element_to_dict, parse_pdf
+from src.ingestion.pipeline import process_pdf
 
 
 PDF_PATH = Path("data/raw/sample.pdf")
-OUTPUT_PATH = Path("data/processed/sample.json")
+OUTPUT_PATH = Path("data/processed/sample_cleaned.json")
 
 
 def main() -> None:
-    elements = parse_pdf(PDF_PATH)
+    elements = process_pdf(PDF_PATH)
 
-    parsed_elements = [
-        element_to_dict(element)
+    output = [
+        asdict(element)
         for element in elements
     ]
 
@@ -20,13 +21,13 @@ def main() -> None:
 
     with OUTPUT_PATH.open("w", encoding="utf-8") as file:
         json.dump(
-            parsed_elements,
+            output,
             file,
             indent=2,
             ensure_ascii=False,
         )
 
-    print(f"Parsed {len(parsed_elements)} elements.")
+    print(f"Processed {len(output)} elements.")
     print(f"Saved output to: {OUTPUT_PATH}")
 
 

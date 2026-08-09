@@ -111,29 +111,57 @@ class Retriever:
             payload = result.payload or {}
 
             retrieved_chunks.append(
-                RetrievedChunk(
-                    chunk_id=str(result.id),
-                    score=score,
-                    text=payload.get("text", ""),
-                    document_id=payload.get(
-                        "document_id",
-                        "",
-                    ),
-                    document_name=payload.get(
-                        "document_name",
-                        "",
-                    ),
-                    section=payload.get("section"),
-                    page_numbers=payload.get(
-                        "page_numbers",
-                        [],
-                    ),
-                    element_types=payload.get(
-                        "element_types",
-                        [],
-                    ),
-                    metadata=payload,
-                )
-            )
+    RetrievedChunk(
+        chunk_id=str(result.id),
+        score=score,
+        text=payload.get("text", ""),
+
+        document_id=payload.get(
+            "document_id",
+            "",
+        ),
+
+        document_name=payload.get(
+            "document_name",
+            "",
+        ),
+
+        section=payload.get(
+            "section"
+        ),
+
+        page_numbers=payload.get(
+            "page_numbers",
+            [],
+        ),
+
+        element_types=payload.get(
+            "element_types",
+            [],
+        ),
+
+        content_type=payload.get(
+            "content_type",
+            "text",
+        ),
+
+        table_data=payload.get(
+            "table_data"
+        ),
+
+        contains_table=payload.get(
+            "contains_table",
+            False,
+        ),
+
+        contains_image=payload.get(
+            "contains_image",
+            False,
+        ),
+
+        metadata=payload,
+    )
+)
+                
 
         return retrieved_chunks

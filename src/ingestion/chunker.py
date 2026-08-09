@@ -6,6 +6,31 @@ from .chunk_schema import DocumentChunk
 from .schema import DocumentElement
 
 
+def classify_element(element_type: str) -> str:
+    """
+    Map Unstructured element types to a simplified
+    multimodal content type.
+    """
+
+    if element_type == "Table":
+        return "table"
+
+    if element_type == "Image":
+        return "image"
+
+    if element_type in {
+        "Title",
+        "Header",
+        "Footer",
+        "NarrativeText",
+        "ListItem",
+        "Text",
+    }:
+        return "text"
+
+    return "text"
+
+
 def create_chunk_id(
     document_id: str,
     element_ids: list[str],
@@ -16,6 +41,7 @@ def create_chunk_id(
     The same document + element IDs will always
     generate the same UUID.
     """
+
     source = f"{document_id}:{'|'.join(element_ids)}"
 
     digest = hashlib.sha256(
@@ -63,12 +89,50 @@ def _build_chunk(
         if element.element_type == "Image":
             contains_image = True
 
+    # ---------------------------------------------------------
+    # Build chunk text
+    # ---------------------------------------------------------
+
     text = "\n\n".join(text_parts)
+
+    # ---------------------------------------------------------
+    # Determine multimodal content type
+    # ---------------------------------------------------------
+
+    content_types = [
+        classify_element(element.element_type)
+        for element in elements
+    ]
+
+    if "table" in content_types:
+        content_type = "table"
+    elif "image" in content_types:
+        content_type = "image"
+    else:
+        content_type = "text"
+
+    # ---------------------------------------------------------
+    # Preserve table structure
+    # ---------------------------------------------------------
+
+    table_data = (
+        text
+        if content_type == "table"
+        else None
+    )
+
+    # ---------------------------------------------------------
+    # Create deterministic chunk ID
+    # ---------------------------------------------------------
 
     chunk_id = create_chunk_id(
         document_id=document_id,
         element_ids=element_ids,
     )
+
+    # ---------------------------------------------------------
+    # Create DocumentChunk
+    # ---------------------------------------------------------
 
     return DocumentChunk(
         chunk_id=chunk_id,
@@ -81,6 +145,8 @@ def _build_chunk(
         element_types=element_types,
         contains_table=contains_table,
         contains_image=contains_image,
+        content_type=content_type,
+        table_data=table_data,
     )
 
 
@@ -109,9 +175,9 @@ def create_chunks(
 
         element_type = element.element_type
 
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
         # TITLE → start a new section
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
 
         if element_type == "Title":
 
@@ -129,9 +195,9 @@ def create_chunks(
         else:
             element.section = current_section
 
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
         # TABLE → always standalone
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
 
         if element_type == "Table":
 
@@ -149,11 +215,13 @@ def create_chunks(
 
             continue
 
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
         # CHARACTER LIMIT
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
 
-        element_length = len(element.text)
+        element_length = len(
+            element.text or ""
+        )
 
         if (
             current_elements
@@ -171,9 +239,9 @@ def create_chunks(
         current_elements.append(element)
         current_length += element_length
 
-    # -------------------------------------------------------------
+    # ---------------------------------------------------------
     # FINAL CHUNK
-    # -------------------------------------------------------------
+    # ---------------------------------------------------------
 
     if current_elements:
         chunks.append(
@@ -217,6 +285,10 @@ def _split_oversized_element(
         max_characters,
     )
 
+    content_type = classify_element(
+        element.element_type
+    )
+
     for index, part in enumerate(parts):
 
         chunk_id = create_chunk_id(
@@ -224,6 +296,12 @@ def _split_oversized_element(
             [
                 f"{element.element_id}:{index}"
             ],
+        )
+
+        table_data = (
+            part
+            if content_type == "table"
+            else None
         )
 
         chunks.append(
@@ -238,14 +316,20 @@ def _split_oversized_element(
                     if element.page_number is not None
                     else []
                 ),
-                element_ids=[element.element_id],
-                element_types=[element.element_type],
+                element_ids=[
+                    element.element_id
+                ],
+                element_types=[
+                    element.element_type
+                ],
                 contains_table=(
                     element.element_type == "Table"
                 ),
                 contains_image=(
                     element.element_type == "Image"
                 ),
+                content_type=content_type,
+                table_data=table_data,
             )
         )
 

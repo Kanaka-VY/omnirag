@@ -67,6 +67,8 @@ def main():
                     "element_types": chunk.element_types,
                     "contains_table": chunk.contains_table,
                     "contains_image": chunk.contains_image,
+                    "content_type": chunk.content_type,
+                    "table_data": chunk.table_data,
                 },
             }
         )

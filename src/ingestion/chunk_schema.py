@@ -11,11 +11,26 @@ class DocumentChunk:
 
     section: Optional[str] = None
 
-    page_numbers: List[int] = field(default_factory=list)
+    page_numbers: List[int] = field(
+        default_factory=list
+    )
 
-    element_ids: List[str] = field(default_factory=list)
+    element_ids: List[str] = field(
+        default_factory=list
+    )
 
-    element_types: List[str] = field(default_factory=list)
+    element_types: List[str] = field(
+        default_factory=list
+    )
 
     contains_table: bool = False
+
     contains_image: bool = False
+
+    # ---------------------------------------------------------
+    # Multimodal metadata
+    # ---------------------------------------------------------
+
+    content_type: str = "text"
+
+    table_data: Optional[str] = None

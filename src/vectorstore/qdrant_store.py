@@ -30,3 +30,13 @@ def search(
     )
 
     return response.points
+    "content_type": getattr(
+    chunk,
+    "content_type",
+    "text",
+    ),
+    "table_data": getattr(
+    chunk,
+    "table_data",
+    None,
+    ),

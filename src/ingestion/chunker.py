@@ -1,4 +1,6 @@
 from typing import List
+import hashlib
+import uuid
 
 from .chunk_schema import DocumentChunk
 from .schema import DocumentElement
@@ -8,18 +10,28 @@ def create_chunk_id(
     document_id: str,
     element_ids: list[str],
 ) -> str:
-    import hashlib
+    """
+    Create a deterministic UUID for a chunk.
 
+    The same document + element IDs will always
+    generate the same UUID.
+    """
     source = f"{document_id}:{'|'.join(element_ids)}"
 
-    return hashlib.sha256(
+    digest = hashlib.sha256(
         source.encode("utf-8")
-    ).hexdigest()[:16]
+    ).hexdigest()
+
+    return str(uuid.UUID(digest[:32]))
 
 
 def _build_chunk(
     elements: List[DocumentElement],
 ) -> DocumentChunk:
+    """
+    Combine multiple DocumentElements into one DocumentChunk.
+    """
+
     document_id = elements[0].document_id
     document_name = elements[0].document_name
 
@@ -35,6 +47,7 @@ def _build_chunk(
     section = elements[0].section
 
     for element in elements:
+
         if element.text:
             text_parts.append(element.text)
 
@@ -69,10 +82,22 @@ def _build_chunk(
         contains_table=contains_table,
         contains_image=contains_image,
     )
+
+
 def create_chunks(
     elements: List[DocumentElement],
     max_characters: int = 1000,
 ) -> List[DocumentChunk]:
+    """
+    Convert DocumentElements into semantically meaningful chunks.
+
+    Rules:
+    1. A Title starts a new section.
+    2. Tables are standalone chunks.
+    3. Chunks respect the maximum character limit.
+    4. Section metadata is preserved.
+    """
+
     chunks = []
 
     current_elements: List[DocumentElement] = []
@@ -81,28 +106,40 @@ def create_chunks(
     current_section = None
 
     for element in elements:
+
         element_type = element.element_type
 
-        # A new title starts a new section.
+        # ---------------------------------------------------------
+        # TITLE → start a new section
+        # ---------------------------------------------------------
+
         if element_type == "Title":
+
             if current_elements:
                 chunks.append(
                     _build_chunk(current_elements)
                 )
+
                 current_elements = []
                 current_length = 0
 
             current_section = element.text
             element.section = current_section
+
         else:
             element.section = current_section
 
-        # Tables are always standalone.
+        # ---------------------------------------------------------
+        # TABLE → always standalone
+        # ---------------------------------------------------------
+
         if element_type == "Table":
+
             if current_elements:
                 chunks.append(
                     _build_chunk(current_elements)
                 )
+
                 current_elements = []
                 current_length = 0
 
@@ -112,12 +149,18 @@ def create_chunks(
 
             continue
 
+        # ---------------------------------------------------------
+        # CHARACTER LIMIT
+        # ---------------------------------------------------------
+
         element_length = len(element.text)
 
         if (
             current_elements
-            and current_length + element_length > max_characters
+            and current_length + element_length
+            > max_characters
         ):
+
             chunks.append(
                 _build_chunk(current_elements)
             )
@@ -127,6 +170,10 @@ def create_chunks(
 
         current_elements.append(element)
         current_length += element_length
+
+    # -------------------------------------------------------------
+    # FINAL CHUNK
+    # -------------------------------------------------------------
 
     if current_elements:
         chunks.append(
@@ -144,6 +191,7 @@ def split_text(
     Split oversized text into approximately equal
     character-based pieces.
     """
+
     return [
         text[i:i + max_characters]
         for i in range(
@@ -153,10 +201,15 @@ def split_text(
         )
     ]
 
+
 def _split_oversized_element(
     element: DocumentElement,
     max_characters: int,
 ) -> List[DocumentChunk]:
+    """
+    Split a single oversized element into multiple chunks.
+    """
+
     chunks = []
 
     parts = split_text(
@@ -165,6 +218,7 @@ def _split_oversized_element(
     )
 
     for index, part in enumerate(parts):
+
         chunk_id = create_chunk_id(
             element.document_id,
             [

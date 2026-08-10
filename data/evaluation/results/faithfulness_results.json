@@ -1,0 +1,33 @@
+{
+  "num_records": 3,
+  "average_faithfulness": 0.6666666666666666,
+  "results": [
+    {
+      "question": "What is Ravi salary?",
+      "reference": "Ravi salary is 50000 per month.",
+      "retrieved_contexts": [
+        "Ravi is an employee. His monthly salary is 50000."
+      ],
+      "response": "Ravi salary is 50000 per month.",
+      "faithfulness": 1.0
+    },
+    {
+      "question": "Where does Ravi work?",
+      "reference": "The context does not specify where Ravi works.",
+      "retrieved_contexts": [
+        "Ravi is an employee. His monthly salary is 50000."
+      ],
+      "response": "Ravi works in Bangalore.",
+      "faithfulness": 0.0
+    },
+    {
+      "question": "What is Ravi salary?",
+      "reference": "Ravi salary is 50000 per month.",
+      "retrieved_contexts": [
+        "Ravi is an employee. His monthly salary is 50000."
+      ],
+      "response": "Ravi earns 50000 per month.",
+      "faithfulness": 1.0
+    }
+  ]
+}

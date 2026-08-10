@@ -1,0 +1,10 @@
+[
+  {
+    "question": "What is Ravi's salary?",
+    "reference": "Ravi's salary is 60000."
+  },
+  {
+    "question": "Which department does Priya work in?",
+    "reference": "Priya works in the HR department."
+  }
+]

@@ -1,11 +1,12 @@
 from src.embeddings.embedder import EmbeddingModel
 from src.generation.generator import RAGGenerator
 from src.generation.llm import LLM
+from src.generation.providers.api.groq_provider import GroqProvider
 from src.retrieval.retriever import Retriever
 from src.vectorstore.client import get_qdrant_client
 from src.vectorstore.repository import QdrantRepository
 
-
+llm = GroqProvider()
 COLLECTION_NAME = "omnirag_documents"
 
 
@@ -79,7 +80,7 @@ def main() -> None:
     # 5. Create LLM
     # ---------------------------------------------------------
 
-    llm = ConsoleLLM()
+    llm = GroqProvider()
 
     generator = RAGGenerator(
         llm=llm,
@@ -144,12 +145,14 @@ def main() -> None:
             continue
 
         for source in result.sources:
-
             print(
-                f"- {source.document_name}, "
-                f"pages {source.page_numbers}, "
-                f"score {source.score:.4f}"
-            )
+               f"- {source.document_name}, "
+               f"pages {source.page_numbers},"
+               f"score {source.score:.4f}"
+    )
+
+            print("  Text:")
+            print(f"  {source.text}")
 
 
 if __name__ == "__main__":

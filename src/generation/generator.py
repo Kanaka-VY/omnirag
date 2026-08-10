@@ -1,10 +1,10 @@
 from src.generation.context import build_context
+from src.generation.llm import LLM
 from src.generation.models import GeneratedAnswer
 from src.generation.prompts import (
     SYSTEM_PROMPT,
     build_user_prompt,
 )
-from src.generation.llm import LLM
 from src.retrieval.models import RetrievedChunk
 
 

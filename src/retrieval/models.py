@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -9,7 +9,11 @@ class RetrievedChunk:
     text: str
     document_id: str
     document_name: str
-    section: str | None
-    page_numbers: list[int]
-    element_types: list[str]
-    metadata: dict[str, Any]
+    section: str | None = None
+    page_numbers: list[int] = field(default_factory=list)
+    element_types: list[str] = field(default_factory=list)
+    content_type: str = "text"
+    table_data: str | None = None
+    contains_table: bool = False
+    contains_image: bool = False
+    metadata: dict[str, Any] = field(default_factory=dict)

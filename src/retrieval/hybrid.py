@@ -1,29 +1,38 @@
 from dataclasses import dataclass
+from typing import Any
 
-from src.retrieval.bm25 import BM25Retriever
-from src.retrieval.retriever import RetrievedChunk
+from src.retrieval.lexical import BM25Retriever
 
 
 @dataclass
 class HybridResult:
+    """
+    Result produced by hybrid retrieval.
+
+    Contains the fused RRF score while preserving
+    the original chunk metadata for downstream
+    reranking, generation, and citations.
+    """
+
     chunk_id: str
     score: float
     text: str
+    metadata: dict[str, Any]
 
 
 class HybridRetriever:
     """
     Combines dense semantic retrieval with BM25
-    lexical retrieval.
+    lexical retrieval using Reciprocal Rank Fusion (RRF).
 
     Dense retrieval:
-        Finds semantically similar content.
+        Finds semantically similar chunks.
 
-    BM25:
-        Finds exact keyword matches.
+    BM25 retrieval:
+        Finds keyword/exact-term matches.
 
-    The two rankings are combined using
-    Reciprocal Rank Fusion (RRF).
+    RRF:
+        Combines the two rankings into one ranking.
     """
 
     def __init__(
@@ -42,6 +51,14 @@ class HybridRetriever:
         top_k: int = 5,
         document_id: str | None = None,
     ) -> list[HybridResult]:
+        """
+        Retrieve chunks using dense + BM25 retrieval
+        and combine their rankings using RRF.
+        """
+
+        # -------------------------------------------------
+        # Validate query
+        # -------------------------------------------------
 
         if not query.strip():
             return []
@@ -49,9 +66,9 @@ class HybridRetriever:
         if top_k <= 0:
             return []
 
-        # -----------------------------------------------------
-        # Dense retrieval
-        # -----------------------------------------------------
+        # -------------------------------------------------
+        # 1. Dense semantic retrieval
+        # -------------------------------------------------
 
         dense_results = self.dense_retriever.retrieve(
             query=query,
@@ -59,22 +76,43 @@ class HybridRetriever:
             document_id=document_id,
         )
 
-        # -----------------------------------------------------
-        # BM25 retrieval
-        # -----------------------------------------------------
+        # -------------------------------------------------
+        # 2. BM25 lexical retrieval
+        # -------------------------------------------------
 
         bm25_results = self.bm25_retriever.retrieve(
             query=query,
             top_k=top_k,
         )
 
-        # -----------------------------------------------------
-        # Reciprocal Rank Fusion
-        # -----------------------------------------------------
+        # -------------------------------------------------
+        # Keep original results by chunk ID
+        # -------------------------------------------------
+
+        dense_by_id = {
+            str(result.chunk_id): result
+            for result in dense_results
+        }
+
+        bm25_by_id = {
+            str(result.chunk_id): result
+            for result in bm25_results
+        }
+
+        # -------------------------------------------------
+        # 3. Reciprocal Rank Fusion
+        #
+        # RRF score:
+        #
+        #     1 / (rrf_k + rank)
+        #
+        # If a chunk appears in both rankings,
+        # its scores are added.
+        # -------------------------------------------------
 
         scores: dict[str, float] = {}
-        texts: dict[str, str] = {}
 
+        # Dense ranking
         for rank, result in enumerate(
             dense_results,
             start=1,
@@ -86,8 +124,7 @@ class HybridRetriever:
                 + 1.0 / (self.rrf_k + rank)
             )
 
-            texts[chunk_id] = result.text
-
+        # BM25 ranking
         for rank, result in enumerate(
             bm25_results,
             start=1,
@@ -99,11 +136,9 @@ class HybridRetriever:
                 + 1.0 / (self.rrf_k + rank)
             )
 
-            texts[chunk_id] = result.text
-
-        # -----------------------------------------------------
-        # Sort by fused score
-        # -----------------------------------------------------
+        # -------------------------------------------------
+        # 4. Sort by fused RRF score
+        # -------------------------------------------------
 
         ranked = sorted(
             scores.items(),
@@ -111,11 +146,59 @@ class HybridRetriever:
             reverse=True,
         )
 
-        return [
-            HybridResult(
-                chunk_id=chunk_id,
-                score=score,
-                text=texts[chunk_id],
-            )
-            for chunk_id, score in ranked[:top_k]
-        ]
+        # -------------------------------------------------
+        # 5. Build HybridResult objects
+        #
+        # Prefer the dense result when available because
+        # RetrievedChunk contains complete metadata:
+        #
+        # document_id
+        # document_name
+        # page_numbers
+        # content_type
+        # etc.
+        # -------------------------------------------------
+
+        results: list[HybridResult] = []
+
+        for chunk_id, fused_score in ranked[:top_k]:
+
+            if chunk_id in dense_by_id:
+
+                original = dense_by_id[chunk_id]
+
+                results.append(
+                    HybridResult(
+                        chunk_id=str(
+                            original.chunk_id
+                        ),
+                        score=float(
+                            fused_score
+                        ),
+                        text=original.text,
+                        metadata=original.metadata,
+                    )
+                )
+
+            elif chunk_id in bm25_by_id:
+
+                original = bm25_by_id[chunk_id]
+
+                results.append(
+                    HybridResult(
+                        chunk_id=str(
+                            original.chunk_id
+                        ),
+                        score=float(
+                            fused_score
+                        ),
+                        text=original.text,
+                        metadata=getattr(
+                            original,
+                            "metadata",
+                            {},
+                        ),
+                    )
+                )
+
+        return results

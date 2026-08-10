@@ -1,8 +1,8 @@
 from src.embeddings.embedder import EmbeddingModel
 from src.retrieval.config import RetrievalConfig
 from src.vectorstore.repository import QdrantRepository
-from src.vectorstore.schema import RetrievedChunk
-
+# rom src.vectorstore.schema import RetrievedChunk
+from src.retrieval.models import RetrievedChunk
 
 class Retriever:
     """

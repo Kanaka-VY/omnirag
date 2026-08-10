@@ -21,3 +21,21 @@ def build_evaluation_dataset(
     return EvaluationDataset(
         samples=samples
     )
+
+def evaluate_faithfulness(
+    record,
+    evaluator_llm,
+):
+    metric = Faithfulness(
+        llm=evaluator_llm
+    )
+
+    result = metric.score(
+        user_input=record["question"],
+        response=record["response"],
+        retrieved_contexts=record[
+            "retrieved_contexts"
+        ],
+    )
+
+    return float(result.value)

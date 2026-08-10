@@ -8,7 +8,7 @@ from qdrant_client.models import Distance, PointStruct, VectorParams
 class QdrantRepository:
     """
     Handles collection creation, vector insertion,
-    and vector search in Qdrant.
+    vector search, and retrieval of stored chunks.
     """
 
     def __init__(
@@ -101,3 +101,43 @@ class QdrantRepository:
         )
 
         return response.points
+
+    def get_all_chunks(
+        self,
+    ) -> list[dict[str, Any]]:
+        """
+        Retrieve all document chunk payloads from Qdrant.
+
+        This provides the same chunk data used by dense
+        retrieval to the lexical/BM25 retriever.
+        """
+
+        chunks: list[dict[str, Any]] = []
+
+        offset = None
+
+        while True:
+            points, next_offset = self.client.scroll(
+                collection_name=self.collection_name,
+                limit=100,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+
+            for point in points:
+                payload = point.payload or {}
+
+                chunks.append(
+                    {
+                        "chunk_id": str(point.id),
+                        **payload,
+                    }
+                )
+
+            if next_offset is None:
+                break
+
+            offset = next_offset
+
+        return chunks

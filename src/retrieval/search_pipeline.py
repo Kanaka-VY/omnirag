@@ -5,9 +5,7 @@ class SearchPipeline:
         hybrid_retriever,
         reranker,
     ):
-        self.hybrid_retriever = (
-            hybrid_retriever
-        )
+        self.hybrid_retriever = hybrid_retriever
         self.reranker = reranker
 
     def search(
@@ -16,16 +14,13 @@ class SearchPipeline:
         candidate_k: int = 20,
         top_k: int = 5,
     ):
-        candidates = (
-            self.hybrid_retriever.retrieve(
-                query,
-                top_k=candidate_k,
-                candidate_k=candidate_k,
-            )
+        candidates = self.hybrid_retriever.retrieve(
+            query=query,
+            top_k=candidate_k,
         )
 
         return self.reranker.rerank(
-            query,
-            candidates,
+            query=query,
+            candidates=candidates,
             top_k=top_k,
         )

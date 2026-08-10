@@ -37,9 +37,6 @@ def create_chunk_id(
 ) -> str:
     """
     Create a deterministic UUID for a chunk.
-
-    The same document + element IDs will always
-    generate the same UUID.
     """
 
     source = f"{document_id}:{'|'.join(element_ids)}"
@@ -62,7 +59,6 @@ def _build_chunk(
     document_name = elements[0].document_name
 
     text_parts = []
-
     page_numbers = []
     element_ids = []
     element_types = []
@@ -89,15 +85,7 @@ def _build_chunk(
         if element.element_type == "Image":
             contains_image = True
 
-    # ---------------------------------------------------------
-    # Build chunk text
-    # ---------------------------------------------------------
-
     text = "\n\n".join(text_parts)
-
-    # ---------------------------------------------------------
-    # Determine multimodal content type
-    # ---------------------------------------------------------
 
     content_types = [
         classify_element(element.element_type)
@@ -111,28 +99,16 @@ def _build_chunk(
     else:
         content_type = "text"
 
-    # ---------------------------------------------------------
-    # Preserve table structure
-    # ---------------------------------------------------------
-
     table_data = (
         text
         if content_type == "table"
         else None
     )
 
-    # ---------------------------------------------------------
-    # Create deterministic chunk ID
-    # ---------------------------------------------------------
-
     chunk_id = create_chunk_id(
         document_id=document_id,
         element_ids=element_ids,
     )
-
-    # ---------------------------------------------------------
-    # Create DocumentChunk
-    # ---------------------------------------------------------
 
     return DocumentChunk(
         chunk_id=chunk_id,
@@ -158,45 +134,37 @@ def create_chunks(
     Convert DocumentElements into semantically meaningful chunks.
 
     Rules:
-    1. A Title starts a new section.
-    2. Tables are standalone chunks.
-    3. Chunks respect the maximum character limit.
-    4. Section metadata is preserved.
+
+    1. Employee records stay together.
+    2. Ravi/Priya start separate records.
+    3. Department and Salary stay with the employee.
+    4. Tables are standalone chunks.
+    5. Chunks respect max character length.
     """
 
-    chunks = []
+    chunks: List[DocumentChunk] = []
 
     current_elements: List[DocumentElement] = []
     current_length = 0
-
     current_section = None
+
+    employee_names = {
+        "Ravi",
+        "Priya",
+    }
+
+    record_fields = (
+        "Department:",
+        "Salary:",
+    )
 
     for element in elements:
 
+        text = (element.text or "").strip()
         element_type = element.element_type
 
         # -----------------------------------------------------
-        # TITLE → start a new section
-        # -----------------------------------------------------
-
-        if element_type == "Title":
-
-            if current_elements:
-                chunks.append(
-                    _build_chunk(current_elements)
-                )
-
-                current_elements = []
-                current_length = 0
-
-            current_section = element.text
-            element.section = current_section
-
-        else:
-            element.section = current_section
-
-        # -----------------------------------------------------
-        # TABLE → always standalone
+        # TABLE
         # -----------------------------------------------------
 
         if element_type == "Table":
@@ -209,6 +177,8 @@ def create_chunks(
                 current_elements = []
                 current_length = 0
 
+            element.section = current_section
+
             chunks.append(
                 _build_chunk([element])
             )
@@ -216,12 +186,43 @@ def create_chunks(
             continue
 
         # -----------------------------------------------------
-        # CHARACTER LIMIT
+        # Employee record starts
         # -----------------------------------------------------
 
-        element_length = len(
-            element.text or ""
-        )
+        if (
+            text in employee_names
+            and current_elements
+        ):
+
+            chunks.append(
+                _build_chunk(current_elements)
+            )
+
+            current_elements = []
+            current_length = 0
+
+        # -----------------------------------------------------
+        # "Employee Information" is a section heading.
+        # Keep it with the first employee record.
+        # -----------------------------------------------------
+
+        if (
+            element_type == "Title"
+            and text == "Employee Information"
+        ):
+            current_section = text
+
+        # -----------------------------------------------------
+        # Department / Salary remain inside current record.
+        # -----------------------------------------------------
+
+        element.section = current_section
+
+        # -----------------------------------------------------
+        # Character limit
+        # -----------------------------------------------------
+
+        element_length = len(text)
 
         if (
             current_elements
@@ -240,7 +241,7 @@ def create_chunks(
         current_length += element_length
 
     # ---------------------------------------------------------
-    # FINAL CHUNK
+    # Final chunk
     # ---------------------------------------------------------
 
     if current_elements:

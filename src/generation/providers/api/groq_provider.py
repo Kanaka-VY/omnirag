@@ -5,7 +5,6 @@ from groq import Groq
 
 from src.generation.llm import LLM
 
-
 load_dotenv()
 
 
@@ -14,6 +13,7 @@ class GroqProvider(LLM):
 
     def __init__(self) -> None:
         api_key = os.getenv("GROQ_API_KEY")
+
         model = os.getenv(
             "LLM_MODEL",
             "llama-3.3-70b-versatile",

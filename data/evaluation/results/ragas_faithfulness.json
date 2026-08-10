@@ -1,0 +1,13 @@
+{
+  "metric": "faithfulness",
+  "results": [
+    {
+      "question": "What is Ravi's salary?",
+      "response": "Ravi's salary is 60000.",
+      "retrieved_contexts": [
+        "Ravi's salary is 60000."
+      ],
+      "score": 1.0
+    }
+  ]
+}

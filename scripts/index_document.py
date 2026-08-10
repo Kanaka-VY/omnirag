@@ -1,85 +1,141 @@
 from pathlib import Path
 
-from src.ingestion.pipeline import process_pdf
-from src.ingestion.chunker import create_chunks
 from src.embeddings.embedder import EmbeddingModel
+from src.ingestion.chunker import create_chunks
+from src.ingestion.pipeline import process_pdf
 from src.vectorstore.client import get_qdrant_client
 from src.vectorstore.repository import QdrantRepository
 
 
-PDF_PATH = Path("data/raw/sample.pdf")
+def index_pdf(pdf_path: Path) -> None:
+    print(f"Indexing: {pdf_path}")
 
+    # ---------------------------------------------------------
+    # 1. Parse + clean PDF
+    # ---------------------------------------------------------
 
-def main():
-    print("Processing document...")
-
-    # Step 1: Parse and clean the PDF
-    elements = process_pdf(PDF_PATH)
+    elements = process_pdf(
+        file_path=pdf_path,
+        multimodal=False,
+    )
 
     print(f"Elements: {len(elements)}")
 
-    # Step 2: Convert elements into semantic chunks
-    chunks = create_chunks(elements)
+    if not elements:
+        raise RuntimeError(
+            "No elements were extracted from the PDF."
+        )
+
+    # ---------------------------------------------------------
+    # 2. Create chunks
+    # ---------------------------------------------------------
+
+    chunks = create_chunks(
+        elements,
+        max_characters=1000,
+    )
 
     print(f"Chunks: {len(chunks)}")
 
-    # Step 3: Load embedding model
-    print("\nLoading embedding model...")
+    if not chunks:
+        raise RuntimeError(
+            "No chunks were created from the PDF."
+        )
 
-    model = EmbeddingModel()
+    # ---------------------------------------------------------
+    # 3. Load embedding model
+    # ---------------------------------------------------------
 
-    # Step 4: Generate embeddings
-    texts = [chunk.text for chunk in chunks]
+    embedding_model = EmbeddingModel()
 
-    print("\nGenerating embeddings...")
-
-    embeddings = model.encode(texts)
-
-    print(f"Embedding matrix shape: {embeddings.shape}")
-
-    # Step 5: Connect to Qdrant
-    client = get_qdrant_client()
-
-    repository = QdrantRepository(
-        client=client,
-        collection_name="omnirag_documents",
-        vector_size=model.dimension(),
+    print(
+        f"Embedding dimension: "
+        f"{embedding_model.dimension()}"
     )
 
-    # Step 6: Create collection if it doesn't exist
+    # ---------------------------------------------------------
+    # 4. Create Qdrant repository
+    # ---------------------------------------------------------
+
+    repository = QdrantRepository(
+        client=get_qdrant_client(),
+        collection_name="omnirag_documents",
+        vector_size=embedding_model.dimension(),
+    )
+
     repository.create_collection()
 
-    # Step 7: Prepare records
+    # ---------------------------------------------------------
+    # 5. Embed chunk text
+    # ---------------------------------------------------------
+
+    texts = [
+        chunk.text
+        for chunk in chunks
+    ]
+
+    embeddings = embedding_model.encode(texts)
+
+    # ---------------------------------------------------------
+    # 6. Build Qdrant records
+    # ---------------------------------------------------------
+
     records = []
 
-    for chunk, vector in zip(chunks, embeddings):
+    for chunk, embedding in zip(
+        chunks,
+        embeddings,
+    ):
+
+        vector = (
+            embedding.tolist()
+            if hasattr(embedding, "tolist")
+            else list(embedding)
+        )
+
+        payload = {
+            "text": chunk.text,
+            "document_id": chunk.document_id,
+            "document_name": chunk.document_name,
+            "section": chunk.section,
+            "page_numbers": chunk.page_numbers,
+            "element_ids": chunk.element_ids,
+            "element_types": chunk.element_types,
+            "content_type": chunk.content_type,
+            "table_data": chunk.table_data,
+            "contains_table": chunk.contains_table,
+            "contains_image": chunk.contains_image,
+        }
+
         records.append(
             {
                 "point_id": chunk.chunk_id,
-                "vector": vector.tolist(),
-                "payload": {
-                    "document_id": chunk.document_id,
-                    "document_name": chunk.document_name,
-                    "text": chunk.text,
-                    "section": chunk.section,
-                    "page_numbers": chunk.page_numbers,
-                    "element_ids": chunk.element_ids,
-                    "element_types": chunk.element_types,
-                    "contains_table": chunk.contains_table,
-                    "contains_image": chunk.contains_image,
-                    "content_type": chunk.content_type,
-                    "table_data": chunk.table_data,
-                },
+                "vector": vector,
+                "payload": payload,
             }
         )
 
-    # Step 8: Upload vectors to Qdrant
-    print("\nUploading vectors to Qdrant...")
+    # ---------------------------------------------------------
+    # 7. Upsert into Qdrant
+    # ---------------------------------------------------------
 
     repository.upsert_vectors(records)
 
-    print(f"Indexed {len(records)} chunks successfully.")
+    print(
+        f"Successfully indexed "
+        f"{len(records)} chunks into Qdrant."
+    )
 
 
 if __name__ == "__main__":
-    main()
+
+    pdf_path = Path(
+        "data/raw/evaluation/employees.pdf"
+    )
+
+    if not pdf_path.exists():
+        raise FileNotFoundError(
+            f"PDF not found: {pdf_path}"
+        )
+
+    index_pdf(pdf_path)

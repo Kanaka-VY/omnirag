@@ -6,5 +6,37 @@
   {
     "question": "Which department does Priya work in?",
     "reference": "Priya works in the HR department."
+  },
+  {
+    "question": "What is Priya's salary?",
+    "reference": "Priya's salary is 55000."
+  },
+  {
+    "question": "Which department does Ravi work in?",
+    "reference": "Ravi works in the Engineering department."
+  },
+  {
+    "question": "How much does Ravi earn?",
+    "reference": "Ravi's salary is 60000."
+  },
+  {
+    "question": "How much does Priya earn?",
+    "reference": "Priya's salary is 55000."
+  },
+  {
+    "question": "Who works in the Engineering department?",
+    "reference": "Ravi works in the Engineering department."
+  },
+  {
+    "question": "Who works in the HR department?",
+    "reference": "Priya works in the HR department."
+  },
+  {
+    "question": "What is Ravi's department and salary?",
+    "reference": "Ravi works in the Engineering department and earns 60000."
+  },
+  {
+    "question": "What is Priya's department and salary?",
+    "reference": "Priya works in the HR department and earns 55000."
   }
 ]

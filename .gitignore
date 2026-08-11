@@ -16,9 +16,7 @@
 
 
 
-# Python
-__pycache__/
-*.py[cod]
+
 
 # Virtual environment
 .venv/
@@ -49,3 +47,26 @@ Thumbs.db
 .coverage
 htmlcov/
 .venv312/
+
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv312/
+
+# Environment
+.env
+
+# MLflow local data
+mlflow.db
+mlruns/
+
+# Local dependency snapshot
+requirements-full.txt
+
+# Generated evaluation results
+data/evaluation/results/
+
+# Streamlit
+.streamlit/

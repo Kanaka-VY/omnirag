@@ -1,3 +1,39 @@
-rank-bm25
+# Core
+python-dotenv
+
+# Document ingestion / parsing
+unstructured
+pypdf
+python-magic
+
+# Embeddings / ML
 sentence-transformers
+torch
+transformers
+
+# Retrieval
+rank-bm25
+
+# Vector database
+qdrant-client
+
+# LLM
+groq
+
+# RAG evaluation
 ragas
+
+# Web / application
+streamlit
+
+# Observability
+arize-phoenix
+arize-phoenix-otel
+openinference-instrumentation
+openinference-instrumentation-groq
+
+# MLOps
+mlflow
+
+# Testing
+pytest

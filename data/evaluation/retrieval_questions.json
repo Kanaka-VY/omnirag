@@ -2,25 +2,13 @@
   {
     "question": "What is Ravi's salary?",
     "relevant_chunk_ids": [
-      "actual_chunk_id_here"
+      "15ce2e46-b348-a2ae-0488-69b5b70b7872"
     ]
-},
+  },
   {
     "question": "Which department does Priya work in?",
-    "relevant_chunk_ids":[
-      "actual_chunk_id_here"
+    "relevant_chunk_ids": [
+      "00d29d40-99cc-3455-a137-880d08feea04"
     ]
-  },
-  {
-    "question": "What is Arun's performance rating?",
-    "relevant_chunk_ids":[
-      "actual_chunk_id_here"
-    ]
-  },
-  {
-    "question": "What was the revenue in 2025?",
-    "relevant_chunk_ids":[
-      "actual_chunk_id_here"
-  ]
   }
 ]

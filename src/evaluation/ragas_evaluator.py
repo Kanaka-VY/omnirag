@@ -5,6 +5,7 @@ from openai import AsyncOpenAI
 
 from ragas import EvaluationDataset, SingleTurnSample
 from ragas.llms import llm_factory
+from ragas.embeddings.base import embedding_factory
 from ragas.metrics.collections import (
     Faithfulness,
     ContextPrecision,
@@ -27,9 +28,12 @@ def build_evaluator_llm():
             "GROQ_API_KEY is not configured."
         )
 
+    # Use a separate evaluator model so that
+    # RAGAS evaluation does not consume the same
+    # generation-model quota.
     model = os.getenv(
-        "LLM_MODEL",
-        "llama-3.3-70b-versatile",
+        "RAGAS_LLM_MODEL",
+        "llama-3.1-8b-instant",
     )
 
     client = AsyncOpenAI(
@@ -42,6 +46,11 @@ def build_evaluator_llm():
         client=client,
     )
 
+def build_evaluator_embeddings():
+    return embedding_factory(
+        provider="huggingface",
+        model="sentence-transformers/all-MiniLM-L6-v2",
+    )
 
 # =========================================================
 # Evaluation Dataset
@@ -145,7 +154,6 @@ async def evaluate_context_recall(
 # =========================================================
 # Answer Relevancy
 # =========================================================
-
 async def evaluate_answer_relevancy(
     record: dict,
     evaluator_llm,
@@ -165,6 +173,7 @@ async def evaluate_answer_relevancy(
     return float(result.value)
 
 
+
 # =========================================================
 # Evaluate All Records
 # =========================================================
@@ -172,6 +181,7 @@ async def evaluate_answer_relevancy(
 async def evaluate_records(
     records: list[dict],
     evaluator_llm,
+    evaluator_embeddings,
 ) -> list[dict]:
 
     results = []
@@ -183,14 +193,26 @@ async def evaluate_records(
             evaluator_llm,
         )
 
-        context_precision = await evaluate_context_precision(
-            record,
-            evaluator_llm,
+        context_precision = (
+            await evaluate_context_precision(
+                record,
+                evaluator_llm,
+            )
         )
 
-        context_recall = await evaluate_context_recall(
-            record,
-            evaluator_llm,
+        context_recall = (
+            await evaluate_context_recall(
+                record,
+                evaluator_llm,
+            )
+        )
+
+        answer_relevancy = (
+            await evaluate_answer_relevancy(
+                record,
+                evaluator_llm,
+                evaluator_embeddings,
+            )
         )
 
         results.append(
@@ -201,9 +223,18 @@ async def evaluate_records(
                 "retrieved_contexts": record[
                     "retrieved_contexts"
                 ],
+                "retrieved_context_ids": record.get(
+                    "retrieved_context_ids",
+                    [],
+                ),
+                "citations": record.get(
+                    "citations",
+                    [],
+                ),
                 "faithfulness": faithfulness,
                 "context_precision": context_precision,
                 "context_recall": context_recall,
+                "answer_relevancy": answer_relevancy,
             }
         )
 
@@ -261,6 +292,21 @@ def calculate_average_context_recall(
 
     total = sum(
         result["context_recall"]
+        for result in results
+    )
+
+    return total / len(results)
+
+
+def calculate_average_answer_relevancy(
+    results: list[dict],
+) -> float:
+
+    if not results:
+        return 0.0
+
+    total = sum(
+        result["answer_relevancy"]
         for result in results
     )
 

@@ -176,7 +176,11 @@ class HybridRetriever:
                             fused_score
                         ),
                         text=original.text,
-                        metadata=original.metadata,
+                        metadata=getattr(
+original,
+    "metadata",
+    {},
+),
                     )
                 )
 
@@ -185,20 +189,21 @@ class HybridRetriever:
                 original = bm25_by_id[chunk_id]
 
                 results.append(
-                    HybridResult(
-                        chunk_id=str(
-                            original.chunk_id
-                        ),
-                        score=float(
-                            fused_score
-                        ),
-                        text=original.text,
-                        metadata=getattr(
-                            original,
-                            "metadata",
-                            {},
-                        ),
-                    )
-                )
+    HybridResult(
+        chunk_id=str(
+            original.chunk_id
+        ),
+        score=float(
+            fused_score
+        ),
+        text=original.text,
+        metadata=getattr(
+            original,
+            "metadata",
+            {},
+        ),
+    )
+)
+                 
 
         return results

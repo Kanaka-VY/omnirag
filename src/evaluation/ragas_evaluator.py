@@ -5,7 +5,48 @@ from openai import AsyncOpenAI
 
 from ragas import EvaluationDataset, SingleTurnSample
 from ragas.llms import llm_factory
-from ragas.metrics.collections import Faithfulness
+from ragas.metrics.collections import (
+    Faithfulness,
+    ContextPrecision,
+    AnswerRelevancy,
+)
+
+async def evaluate_context_precision(
+    record: dict,
+    evaluator_llm,
+) -> float:
+
+    metric = ContextPrecision(
+        llm=evaluator_llm
+    )
+
+    result = await metric.ascore(
+        user_input=record["question"],
+        reference=record["reference"],
+        retrieved_contexts=record[
+            "retrieved_contexts"
+        ],
+    )
+
+    return float(result.value)
+
+async def evaluate_answer_relevancy(
+    record: dict,
+    evaluator_llm,
+    evaluator_embeddings,
+) -> float:
+
+    metric = AnswerRelevancy(
+        llm=evaluator_llm,
+        embeddings=evaluator_embeddings,
+    )
+
+    result = await metric.ascore(
+        user_input=record["question"],
+        response=record["response"],
+    )
+
+    return float(result.value)
 
 load_dotenv()
 
@@ -78,7 +119,13 @@ async def evaluate_records(
     results = []
 
     for record in records:
+
         faithfulness = await evaluate_faithfulness(
+            record,
+            evaluator_llm,
+        )
+
+        context_precision = await evaluate_context_precision(
             record,
             evaluator_llm,
         )
@@ -86,10 +133,12 @@ async def evaluate_records(
         results.append(
             {
                 "question": record["question"],
-                "reference": record["reference"],
-                "retrieved_contexts": record["retrieved_contexts"],
                 "response": record["response"],
+                "retrieved_contexts": record[
+                    "retrieved_contexts"
+                ],
                 "faithfulness": faithfulness,
+                "context_precision": context_precision,
             }
         )
 

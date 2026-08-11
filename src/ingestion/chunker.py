@@ -134,37 +134,54 @@ def create_chunks(
     Convert DocumentElements into semantically meaningful chunks.
 
     Rules:
-
-    1. Employee records stay together.
-    2. Ravi/Priya start separate records.
-    3. Department and Salary stay with the employee.
-    4. Tables are standalone chunks.
-    5. Chunks respect max character length.
+    1. A Title starts a new section.
+    2. Tables are standalone chunks.
+    3. Chunks respect the maximum character limit.
+    4. Section metadata is preserved.
     """
 
     chunks: List[DocumentChunk] = []
 
     current_elements: List[DocumentElement] = []
     current_length = 0
-    current_section = None
-
-    employee_names = {
-        "Ravi",
-        "Priya",
-    }
-
-    record_fields = (
-        "Department:",
-        "Salary:",
-    )
+    current_section: str | None = None
 
     for element in elements:
 
-        text = (element.text or "").strip()
         element_type = element.element_type
+        element_text = element.text or ""
 
         # -----------------------------------------------------
-        # TABLE
+        # TITLE -> close previous section and start a new one
+        # -----------------------------------------------------
+
+        if element_type == "Title":
+
+            if current_elements:
+                chunks.append(
+                    _build_chunk(current_elements)
+                )
+
+                current_elements = []
+                current_length = 0
+
+            current_section = element_text
+            element.section = current_section
+
+            # Keep title in the new section.
+            current_elements.append(element)
+            current_length = len(element_text)
+
+            continue
+
+        # -----------------------------------------------------
+        # Preserve current section
+        # -----------------------------------------------------
+
+        element.section = current_section
+
+        # -----------------------------------------------------
+        # TABLE -> standalone chunk
         # -----------------------------------------------------
 
         if element_type == "Table":
@@ -177,8 +194,6 @@ def create_chunks(
                 current_elements = []
                 current_length = 0
 
-            element.section = current_section
-
             chunks.append(
                 _build_chunk([element])
             )
@@ -186,50 +201,16 @@ def create_chunks(
             continue
 
         # -----------------------------------------------------
-        # Employee record starts
+        # CHARACTER LIMIT
         # -----------------------------------------------------
 
-        if (
-            text in employee_names
-            and current_elements
-        ):
-
-            chunks.append(
-                _build_chunk(current_elements)
-            )
-
-            current_elements = []
-            current_length = 0
-
-        # -----------------------------------------------------
-        # "Employee Information" is a section heading.
-        # Keep it with the first employee record.
-        # -----------------------------------------------------
-
-        if (
-            element_type == "Title"
-            and text == "Employee Information"
-        ):
-            current_section = text
-
-        # -----------------------------------------------------
-        # Department / Salary remain inside current record.
-        # -----------------------------------------------------
-
-        element.section = current_section
-
-        # -----------------------------------------------------
-        # Character limit
-        # -----------------------------------------------------
-
-        element_length = len(text)
+        element_length = len(element_text)
 
         if (
             current_elements
             and current_length + element_length
             > max_characters
         ):
-
             chunks.append(
                 _build_chunk(current_elements)
             )
@@ -241,7 +222,7 @@ def create_chunks(
         current_length += element_length
 
     # ---------------------------------------------------------
-    # Final chunk
+    # FINAL CHUNK
     # ---------------------------------------------------------
 
     if current_elements:

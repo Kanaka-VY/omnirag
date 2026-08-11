@@ -8,68 +8,16 @@ from ragas.llms import llm_factory
 from ragas.metrics.collections import (
     Faithfulness,
     ContextPrecision,
+    ContextRecall,
     AnswerRelevancy,
 )
-
-async def evaluate_context_precision(
-    record: dict,
-    evaluator_llm,
-) -> float:
-
-    metric = ContextPrecision(
-        llm=evaluator_llm
-    )
-
-    result = await metric.ascore(
-        user_input=record["question"],
-        reference=record["reference"],
-        retrieved_contexts=record[
-            "retrieved_contexts"
-        ],
-    )
-
-    return float(result.value)
-
-async def evaluate_answer_relevancy(
-    record: dict,
-    evaluator_llm,
-    evaluator_embeddings,
-) -> float:
-
-    metric = AnswerRelevancy(
-        llm=evaluator_llm,
-        embeddings=evaluator_embeddings,
-    )
-
-    result = await metric.ascore(
-        user_input=record["question"],
-        response=record["response"],
-    )
-
-    return float(result.value)
 
 load_dotenv()
 
 
-def build_evaluation_dataset(
-    records: list[dict],
-) -> EvaluationDataset:
-    samples = []
-
-    for record in records:
-        samples.append(
-            SingleTurnSample(
-                user_input=record["question"],
-                retrieved_contexts=record["retrieved_contexts"],
-                response=record["response"],
-                reference=record["reference"],
-            )
-        )
-
-    return EvaluationDataset(
-        samples=samples
-    )
-
+# =========================================================
+# Evaluator LLM
+# =========================================================
 
 def build_evaluator_llm():
     api_key = os.getenv("GROQ_API_KEY")
@@ -95,6 +43,37 @@ def build_evaluator_llm():
     )
 
 
+# =========================================================
+# Evaluation Dataset
+# =========================================================
+
+def build_evaluation_dataset(
+    records: list[dict],
+) -> EvaluationDataset:
+
+    samples = []
+
+    for record in records:
+        samples.append(
+            SingleTurnSample(
+                user_input=record["question"],
+                retrieved_contexts=record[
+                    "retrieved_contexts"
+                ],
+                response=record["response"],
+                reference=record["reference"],
+            )
+        )
+
+    return EvaluationDataset(
+        samples=samples
+    )
+
+
+# =========================================================
+# Faithfulness
+# =========================================================
+
 async def evaluate_faithfulness(
     record: dict,
     evaluator_llm,
@@ -107,15 +86,94 @@ async def evaluate_faithfulness(
     result = await metric.ascore(
         user_input=record["question"],
         response=record["response"],
-        retrieved_contexts=record["retrieved_contexts"],
+        retrieved_contexts=record[
+            "retrieved_contexts"
+        ],
     )
 
     return float(result.value)
+
+
+# =========================================================
+# Context Precision
+# =========================================================
+
+async def evaluate_context_precision(
+    record: dict,
+    evaluator_llm,
+) -> float:
+
+    metric = ContextPrecision(
+        llm=evaluator_llm
+    )
+
+    result = await metric.ascore(
+        user_input=record["question"],
+        reference=record["reference"],
+        retrieved_contexts=record[
+            "retrieved_contexts"
+        ],
+    )
+
+    return float(result.value)
+
+
+# =========================================================
+# Context Recall
+# =========================================================
+
+async def evaluate_context_recall(
+    record: dict,
+    evaluator_llm,
+) -> float:
+
+    metric = ContextRecall(
+        llm=evaluator_llm
+    )
+
+    result = await metric.ascore(
+        user_input=record["question"],
+        reference=record["reference"],
+        retrieved_contexts=record[
+            "retrieved_contexts"
+        ],
+    )
+
+    return float(result.value)
+
+
+# =========================================================
+# Answer Relevancy
+# =========================================================
+
+async def evaluate_answer_relevancy(
+    record: dict,
+    evaluator_llm,
+    evaluator_embeddings,
+) -> float:
+
+    metric = AnswerRelevancy(
+        llm=evaluator_llm,
+        embeddings=evaluator_embeddings,
+    )
+
+    result = await metric.ascore(
+        user_input=record["question"],
+        response=record["response"],
+    )
+
+    return float(result.value)
+
+
+# =========================================================
+# Evaluate All Records
+# =========================================================
 
 async def evaluate_records(
     records: list[dict],
     evaluator_llm,
 ) -> list[dict]:
+
     results = []
 
     for record in records:
@@ -130,28 +188,79 @@ async def evaluate_records(
             evaluator_llm,
         )
 
+        context_recall = await evaluate_context_recall(
+            record,
+            evaluator_llm,
+        )
+
         results.append(
             {
                 "question": record["question"],
+                "reference": record["reference"],
                 "response": record["response"],
                 "retrieved_contexts": record[
                     "retrieved_contexts"
                 ],
                 "faithfulness": faithfulness,
                 "context_precision": context_precision,
+                "context_recall": context_recall,
             }
         )
 
     return results
 
+
+# =========================================================
+# Average Faithfulness
+# =========================================================
+
 def calculate_average_faithfulness(
     results: list[dict],
 ) -> float:
+
     if not results:
         return 0.0
 
     total = sum(
         result["faithfulness"]
+        for result in results
+    )
+
+    return total / len(results)
+
+
+# =========================================================
+# Average Context Precision
+# =========================================================
+
+def calculate_average_context_precision(
+    results: list[dict],
+) -> float:
+
+    if not results:
+        return 0.0
+
+    total = sum(
+        result["context_precision"]
+        for result in results
+    )
+
+    return total / len(results)
+
+
+# =========================================================
+# Average Context Recall
+# =========================================================
+
+def calculate_average_context_recall(
+    results: list[dict],
+) -> float:
+
+    if not results:
+        return 0.0
+
+    total = sum(
+        result["context_recall"]
         for result in results
     )
 

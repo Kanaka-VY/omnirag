@@ -42,7 +42,7 @@ jobs:
 
       - name: Compile Python files
         run: |
-          python -m compileall src scripts
+          python -m compileall app src scripts
 
       - name: Run unit and integration tests
         run: |

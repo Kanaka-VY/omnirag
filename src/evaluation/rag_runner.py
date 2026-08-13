@@ -2,10 +2,17 @@ import time
 
 import mlflow
 
+from src.config.settings import (
+    LLM_MODEL,
+    QDRANT_COLLECTION,
+)
+
 from src.embeddings.embedder import EmbeddingModel
+
 from src.vectorstore.client import get_qdrant_client
 from src.vectorstore.repository import QdrantRepository
 
+from src.retrieval.config import RetrievalConfig
 from src.retrieval.retriever import Retriever
 from src.retrieval.lexical import BM25Retriever
 from src.retrieval.hybrid import HybridRetriever
@@ -32,16 +39,23 @@ from src.monitoring.phoenix import (
 )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # MLflow configuration
-# ---------------------------------------------------------
+# =========================================================
 
 setup_mlflow()
 
 
-# ---------------------------------------------------------
+# =========================================================
+# Retrieval configuration
+# =========================================================
+
+_retrieval_config = RetrievalConfig()
+
+
+# =========================================================
 # Pipeline construction
-# ---------------------------------------------------------
+# =========================================================
 
 _embedding_model = EmbeddingModel()
 
@@ -49,17 +63,28 @@ _qdrant_client = get_qdrant_client()
 
 _repository = QdrantRepository(
     client=_qdrant_client,
-    collection_name="omnirag_documents",
+    collection_name=QDRANT_COLLECTION,
     vector_size=_embedding_model.dimension(),
 )
+
+
+# ---------------------------------------------------------
+# Dense semantic retriever
+# ---------------------------------------------------------
 
 _dense_retriever = Retriever(
     embedding_model=_embedding_model,
     repository=_repository,
+    config=_retrieval_config,
 )
 
 
-# Build BM25 from the same Qdrant source of truth.
+# ---------------------------------------------------------
+# BM25 lexical retriever
+#
+# Build the initial BM25 index from the current
+# Qdrant contents.
+# ---------------------------------------------------------
 
 _documents = _repository.get_all_chunks()
 
@@ -67,48 +92,99 @@ _bm25_retriever = BM25Retriever(
     documents=_documents,
 )
 
+
+# ---------------------------------------------------------
+# Hybrid retriever
+# ---------------------------------------------------------
+
 _hybrid_retriever = HybridRetriever(
     dense_retriever=_dense_retriever,
     bm25_retriever=_bm25_retriever,
+    rrf_k=60,
 )
 
+
+# ---------------------------------------------------------
+# Reranker
+# ---------------------------------------------------------
+
 _reranker = CrossEncoderReranker()
+
+
+# ---------------------------------------------------------
+# Search pipeline
+# ---------------------------------------------------------
 
 _search_pipeline = SearchPipeline(
     hybrid_retriever=_hybrid_retriever,
     reranker=_reranker,
 )
 
+
+# ---------------------------------------------------------
+# LLM
+# ---------------------------------------------------------
+
 _llm = GroqProvider()
+
+
+# ---------------------------------------------------------
+# Generator
+# ---------------------------------------------------------
 
 _generator = RAGGenerator(
     llm=_llm,
 )
 
 
-# ---------------------------------------------------------
+# =========================================================
+# Retrieval index refresh
+# =========================================================
+
+def refresh_retrieval_index() -> None:
+    """
+    Refresh the BM25 index from the latest Qdrant data.
+
+    This is required after new documents are uploaded,
+    because the BM25 retriever keeps its own in-memory
+    index.
+    """
+
+    documents = _repository.get_all_chunks()
+
+    _hybrid_retriever.refresh_bm25(
+        documents
+    )
+
+
+# =========================================================
 # Public RAG interface
-# ---------------------------------------------------------
+# =========================================================
 
 def run_rag(question: str) -> dict:
     """
-    Run the complete OmniRAG pipeline.
+    Run the complete OmniRAG RAG pipeline.
 
     Flow:
 
-        question
+        Question
             ↓
-        hybrid retrieval
+        Refresh BM25 index
             ↓
-        reranking
+        Hybrid retrieval
             ↓
-        context construction
+        Cross-encoder reranking
             ↓
-        LLM generation
+        Context construction
             ↓
-        citations
+        Groq LLM generation
             ↓
-        answer
+        Citations
+            ↓
+        Final answer
+
+    Retrieval configuration is controlled through
+    RetrievalConfig / environment variables.
 
     MLflow tracks:
 
@@ -118,22 +194,25 @@ def run_rag(question: str) -> dict:
         - retrieval latency
         - generation latency
         - total latency
-        - number of retrieved chunks
-        - retrieved chunk IDs
+        - retrieved chunks
         - citations
         - answer
 
     Phoenix tracks:
 
         - complete RAG query
-        - retrieval/reranking
-        - context
+        - BM25 refresh
+        - retrieval
+        - context construction
         - generation
         - citations
         - answer
         - latency
-        - retrieved chunk information
     """
+
+    # -----------------------------------------------------
+    # Validate question
+    # -----------------------------------------------------
 
     if not question or not question.strip():
         raise ValueError(
@@ -143,15 +222,29 @@ def run_rag(question: str) -> dict:
     question = question.strip()
 
     # -----------------------------------------------------
-    # Start MLflow run
+    # Resolve configuration
+    # -----------------------------------------------------
+
+    model_name = LLM_MODEL
+
+    top_k = _retrieval_config.top_k
+
+    candidate_k = _retrieval_config.candidate_k
+
+    # -----------------------------------------------------
+    # Start timing
     # -----------------------------------------------------
 
     start_time = time.perf_counter()
 
+    # -----------------------------------------------------
+    # Start MLflow run
+    # -----------------------------------------------------
+
     start_rag_run(
         query=question,
-        model="llama-3.3-70b-versatile",
-        top_k=5,
+        model=model_name,
+        top_k=top_k,
     )
 
     # -----------------------------------------------------
@@ -162,32 +255,49 @@ def run_rag(question: str) -> dict:
         question,
         attributes={
             "rag.pipeline": "OmniRAG",
-            "rag.model": "llama-3.3-70b-versatile",
-            "rag.top_k": 5,
+            "rag.model": model_name,
+            "rag.top_k": top_k,
+            "rag.candidate_k": candidate_k,
         },
     ) as root_span:
 
         try:
 
-            # -------------------------------------------------
+            # =================================================
+            # Refresh BM25
+            # =================================================
+
+            with PhoenixSpan(
+                "OmniRAG BM25 Refresh",
+            ) as refresh_span:
+
+                refresh_retrieval_index()
+
+                add_span_attribute(
+                    refresh_span,
+                    "retrieval.bm25_refreshed",
+                    True,
+                )
+
+            # =================================================
             # Retrieval + reranking
-            # -------------------------------------------------
+            # =================================================
 
             retrieval_start = time.perf_counter()
 
             with PhoenixSpan(
                 "OmniRAG Retrieval",
                 attributes={
-                    "retrieval.candidate_k": 20,
-                    "retrieval.top_k": 5,
+                    "retrieval.candidate_k": candidate_k,
+                    "retrieval.top_k": top_k,
                 },
             ) as retrieval_span:
 
                 reranked_results = (
                     _search_pipeline.search(
                         query=question,
-                        candidate_k=20,
-                        top_k=5,
+                        candidate_k=candidate_k,
+                        top_k=top_k,
                     )
                 )
 
@@ -197,10 +307,9 @@ def run_rag(question: str) -> dict:
                     len(reranked_results),
                 )
 
-            retrieval_end = time.perf_counter()
-
             retrieval_latency = (
-                retrieval_end - retrieval_start
+                time.perf_counter()
+                - retrieval_start
             )
 
             add_span_attribute(
@@ -209,12 +318,9 @@ def run_rag(question: str) -> dict:
                 retrieval_latency,
             )
 
-            # -------------------------------------------------
-            # Convert RerankedResult → RetrievedChunk
-            #
-            # Restores metadata contract expected by
-            # generation and citation layers.
-            # -------------------------------------------------
+            # =================================================
+            # Convert RerankedResult -> RetrievedChunk
+            # =================================================
 
             retrieved_chunks: list[RetrievedChunk] = []
 
@@ -224,7 +330,10 @@ def run_rag(question: str) -> dict:
 
                 for result in reranked_results:
 
-                    metadata = result.metadata or {}
+                    metadata = (
+                        result.metadata
+                        or {}
+                    )
 
                     retrieved_chunks.append(
                         RetrievedChunk(
@@ -292,18 +401,16 @@ def run_rag(question: str) -> dict:
                     ),
                 )
 
-            # -------------------------------------------------
+            # =================================================
             # Generation
-            # -------------------------------------------------
+            # =================================================
 
             generation_start = time.perf_counter()
 
             with PhoenixSpan(
                 "OmniRAG Generation",
                 attributes={
-                    "llm.model": (
-                        "llama-3.3-70b-versatile"
-                    ),
+                    "llm.model": model_name,
                     "llm.provider": "Groq",
                 },
             ) as generation_span:
@@ -325,10 +432,9 @@ def run_rag(question: str) -> dict:
                     "text/plain",
                 )
 
-            generation_end = time.perf_counter()
-
             generation_latency = (
-                generation_end - generation_start
+                time.perf_counter()
+                - generation_start
             )
 
             add_span_attribute(
@@ -337,9 +443,9 @@ def run_rag(question: str) -> dict:
                 generation_latency,
             )
 
-            # -------------------------------------------------
+            # =================================================
             # Citations
-            # -------------------------------------------------
+            # =================================================
 
             with PhoenixSpan(
                 "OmniRAG Citations",
@@ -355,18 +461,18 @@ def run_rag(question: str) -> dict:
                     len(citations),
                 )
 
-            # -------------------------------------------------
+            # =================================================
             # Total latency
-            # -------------------------------------------------
+            # =================================================
 
             total_latency = (
                 time.perf_counter()
                 - start_time
             )
 
-            # -------------------------------------------------
-            # Phoenix root-span metadata
-            # -------------------------------------------------
+            # =================================================
+            # Phoenix metadata
+            # =================================================
 
             add_span_attribute(
                 root_span,
@@ -398,9 +504,9 @@ def run_rag(question: str) -> dict:
                 total_latency,
             )
 
-            # -------------------------------------------------
+            # =================================================
             # MLflow metrics
-            # -------------------------------------------------
+            # =================================================
 
             log_rag_metrics(
                 retrieval_latency=retrieval_latency,
@@ -411,9 +517,9 @@ def run_rag(question: str) -> dict:
                 ),
             )
 
-            # -------------------------------------------------
-            # MLflow retrieval metadata
-            # -------------------------------------------------
+            # =================================================
+            # MLflow metadata
+            # =================================================
 
             log_rag_metadata(
                 retrieved_context_ids=[
@@ -422,10 +528,6 @@ def run_rag(question: str) -> dict:
                 ],
                 citations=citations,
             )
-
-            # -------------------------------------------------
-            # Optional answer metadata
-            # -------------------------------------------------
 
             mlflow.set_tag(
                 "answer",
@@ -437,9 +539,19 @@ def run_rag(question: str) -> dict:
                 str(len(citations)),
             )
 
-            # -------------------------------------------------
-            # Final application contract
-            # -------------------------------------------------
+            mlflow.set_tag(
+                "retrieval_top_k",
+                str(top_k),
+            )
+
+            mlflow.set_tag(
+                "retrieval_candidate_k",
+                str(candidate_k),
+            )
+
+            # =================================================
+            # Final application response
+            # =================================================
 
             return {
                 "question": question,
@@ -457,9 +569,9 @@ def run_rag(question: str) -> dict:
 
         except Exception as exc:
 
-            # -------------------------------------------------
-            # Record failure in Phoenix
-            # -------------------------------------------------
+            # =================================================
+            # Phoenix failure metadata
+            # =================================================
 
             add_span_attribute(
                 root_span,
@@ -479,9 +591,9 @@ def run_rag(question: str) -> dict:
                 str(exc)[:1000],
             )
 
-            # -------------------------------------------------
-            # Record failure in MLflow
-            # -------------------------------------------------
+            # =================================================
+            # MLflow failure metadata
+            # =================================================
 
             mlflow.set_tag(
                 "status",
@@ -502,9 +614,9 @@ def run_rag(question: str) -> dict:
 
         finally:
 
-            # -------------------------------------------------
+            # =================================================
             # End MLflow run
-            # -------------------------------------------------
+            # =================================================
 
             if mlflow.active_run() is not None:
 

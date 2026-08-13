@@ -1,15 +1,19 @@
 from qdrant_client import QdrantClient
 
-
-QDRANT_HOST = "localhost"
-QDRANT_PORT = 6333
+from src.config.settings import (
+    QDRANT_HOST,
+    QDRANT_PORT,
+)
 
 
 def get_qdrant_client() -> QdrantClient:
     """
-    Create and return a Qdrant client connected
-    to the local Qdrant Docker container.
+    Create and return a Qdrant client.
+
+    Configuration is loaded from environment variables
+    through src.config.settings.
     """
+
     return QdrantClient(
         host=QDRANT_HOST,
         port=QDRANT_PORT,

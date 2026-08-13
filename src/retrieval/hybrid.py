@@ -45,6 +45,19 @@ class HybridRetriever:
         self.bm25_retriever = bm25_retriever
         self.rrf_k = rrf_k
 
+    def refresh_bm25(
+        self,
+        documents: list[dict],
+    ) -> None:
+        """
+        Rebuild the BM25 index using the latest
+        document chunks.
+        """
+
+        self.bm25_retriever.refresh(
+            documents
+        )
+
     def retrieve(
         self,
         query: str,
@@ -148,15 +161,6 @@ class HybridRetriever:
 
         # -------------------------------------------------
         # 5. Build HybridResult objects
-        #
-        # Prefer the dense result when available because
-        # RetrievedChunk contains complete metadata:
-        #
-        # document_id
-        # document_name
-        # page_numbers
-        # content_type
-        # etc.
         # -------------------------------------------------
 
         results: list[HybridResult] = []
@@ -177,10 +181,10 @@ class HybridRetriever:
                         ),
                         text=original.text,
                         metadata=getattr(
-original,
-    "metadata",
-    {},
-),
+                            original,
+                            "metadata",
+                            {},
+                        ) or {},
                     )
                 )
 
@@ -189,21 +193,20 @@ original,
                 original = bm25_by_id[chunk_id]
 
                 results.append(
-    HybridResult(
-        chunk_id=str(
-            original.chunk_id
-        ),
-        score=float(
-            fused_score
-        ),
-        text=original.text,
-        metadata=getattr(
-            original,
-            "metadata",
-            {},
-        ),
-    )
-)
-                 
+                    HybridResult(
+                        chunk_id=str(
+                            original.chunk_id
+                        ),
+                        score=float(
+                            fused_score
+                        ),
+                        text=original.text,
+                        metadata=getattr(
+                            original,
+                            "metadata",
+                            {},
+                        ) or {},
+                    )
+                )
 
         return results

@@ -15,6 +15,14 @@ class RerankedResult:
 class CrossEncoderReranker:
     """
     Reranks retrieved candidates using a cross-encoder.
+
+    The reranker:
+        1. Scores query-document pairs.
+        2. Sorts candidates by cross-encoder score.
+        3. Removes candidates below the configured threshold.
+        4. Returns at most top_k relevant chunks.
+        5. Falls back to the best candidate if the threshold
+           removes everything.
     """
 
     def __init__(
@@ -22,17 +30,24 @@ class CrossEncoderReranker:
         model_name: str = (
             "cross-encoder/ms-marco-MiniLM-L-6-v2"
         ),
+        score_threshold: float = 0.0,
     ):
         self.model = CrossEncoder(model_name)
+        self.score_threshold = score_threshold
 
     def rerank(
         self,
         query: str,
         candidates,
         top_k: int = 5,
+        score_threshold: float | None = None,
     ) -> list[RerankedResult]:
 
-        if not query.strip():
+        # -------------------------------------------------
+        # Validation
+        # -------------------------------------------------
+
+        if not query or not query.strip():
             return []
 
         if not candidates:
@@ -40,6 +55,16 @@ class CrossEncoderReranker:
 
         if top_k <= 0:
             return []
+
+        # -------------------------------------------------
+        # Resolve threshold
+        # -------------------------------------------------
+
+        threshold = (
+            self.score_threshold
+            if score_threshold is None
+            else score_threshold
+        )
 
         # -------------------------------------------------
         # Build query-document pairs
@@ -54,7 +79,10 @@ class CrossEncoderReranker:
         # Cross-encoder scoring
         # -------------------------------------------------
 
-        scores = self.model.predict(pairs)
+        scores = self.model.predict(
+            pairs,
+            show_progress_bar=False,
+        )
 
         # -------------------------------------------------
         # Rank candidates
@@ -67,16 +95,56 @@ class CrossEncoderReranker:
         )
 
         # -------------------------------------------------
-        # Convert to RerankedResult
+        # First pass:
+        # Keep candidates above threshold.
         # -------------------------------------------------
 
-        results: list[RerankedResult] = []
+        filtered: list[RerankedResult] = []
 
-        for candidate, score in ranked[:top_k]:
+        for candidate, score in ranked:
 
-            results.append(
+            score = float(score)
+
+            if score < threshold:
+                continue
+
+            filtered.append(
                 RerankedResult(
-                    chunk_id=str(candidate.chunk_id),
+                    chunk_id=str(
+                        candidate.chunk_id
+                    ),
+                    text=candidate.text,
+                    score=score,
+                    metadata=getattr(
+                        candidate,
+                        "metadata",
+                        {},
+                    ) or {},
+                )
+            )
+
+            if len(filtered) >= top_k:
+                break
+
+        # -------------------------------------------------
+        # Fallback
+        #
+        # If no candidate passes the threshold, keep
+        # the single best candidate.
+        #
+        # This protects broad questions such as:
+        # "What is this document about?"
+        # -------------------------------------------------
+
+        if not filtered and ranked:
+
+            candidate, score = ranked[0]
+
+            filtered.append(
+                RerankedResult(
+                    chunk_id=str(
+                        candidate.chunk_id
+                    ),
                     text=candidate.text,
                     score=float(score),
                     metadata=getattr(
@@ -87,4 +155,4 @@ class CrossEncoderReranker:
                 )
             )
 
-        return results
+        return filtered

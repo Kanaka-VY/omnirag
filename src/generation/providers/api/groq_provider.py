@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+from src.config.settings import GROQ_API_KEY, LLM_MODEL
 import time
 from typing import Any
 
@@ -23,13 +23,8 @@ class GroqProvider(LLM):
 
     def __init__(self) -> None:
 
-        api_key = os.getenv("GROQ_API_KEY")
-
-        model = os.getenv(
-            "LLM_MODEL",
-            "llama-3.3-70b-versatile",
-        )
-
+        api_key = GROQ_API_KEY
+        model = LLM_MODEL
         if not api_key:
             raise ValueError(
                 "GROQ_API_KEY is not configured."

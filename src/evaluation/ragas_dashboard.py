@@ -10,7 +10,7 @@ import streamlit as st
 # =========================================================
 
 RESULTS_PATH = Path(
-    "data/evaluation/results/ragas_evaluation.json"
+    "data/evaluation/results/ragas_results.json"
 )
 
 
@@ -41,13 +41,16 @@ def load_results() -> dict:
         }
 
     try:
+
         with RESULTS_PATH.open(
             "r",
             encoding="utf-8",
         ) as file:
+
             return json.load(file)
 
     except json.JSONDecodeError as exc:
+
         return {
             "error": (
                 "The evaluation JSON file is invalid: "
@@ -87,66 +90,48 @@ st.caption(
 
 
 # =========================================================
-# Status
+# Evaluation status
 # =========================================================
 
-status = data.get(
-    "status",
-    "unknown",
+num_records = data.get(
+    "num_records",
+    len(data.get("results", [])),
 )
 
-num_questions = data.get(
-    "num_questions",
-    0,
+st.success(
+    f"Evaluation completed successfully — "
+    f"{num_records} questions evaluated."
 )
-
-if status == "completed":
-
-    st.success(
-        f"Evaluation completed successfully — "
-        f"{num_questions} questions evaluated."
-    )
-
-else:
-
-    st.warning(
-        f"Evaluation status: {status}"
-    )
 
 
 # =========================================================
-# Averages
+# Overall metrics
 # =========================================================
-
-averages = data.get(
-    "averages",
-    {},
-)
 
 faithfulness = float(
-    averages.get(
-        "faithfulness",
+    data.get(
+        "average_faithfulness",
         0.0,
     )
 )
 
 context_precision = float(
-    averages.get(
-        "context_precision",
+    data.get(
+        "average_context_precision",
         0.0,
     )
 )
 
 context_recall = float(
-    averages.get(
-        "context_recall",
+    data.get(
+        "average_context_recall",
         0.0,
     )
 )
 
 answer_relevancy = float(
-    averages.get(
-        "answer_relevancy",
+    data.get(
+        "average_answer_relevancy",
         0.0,
     )
 )
@@ -203,12 +188,12 @@ with interpretation_col1:
 
     st.markdown(
         """
-**Faithfulness**
+### Faithfulness
 
-Measures whether the generated answer is
-supported by the retrieved context.
+Measures whether the generated answer
+is supported by the retrieved context.
 
-**Context Precision**
+### Context Precision
 
 Measures whether the retrieved context
 contains relevant information for the question.
@@ -219,12 +204,12 @@ with interpretation_col2:
 
     st.markdown(
         """
-**Context Recall**
+### Context Recall
 
 Measures whether the required information
 was successfully retrieved.
 
-**Answer Relevancy**
+### Answer Relevancy
 
 Measures how relevant the generated answer
 is to the user's question.
@@ -293,7 +278,10 @@ else:
 
         question_rows.append(
             {
-                "Question": f"Q{index}",
+                "Question": (
+                    f"Q{index}: "
+                    f"{result.get('question', '')}"
+                ),
                 "Faithfulness": round(
                     float(
                         result.get(
@@ -391,7 +379,7 @@ if results:
 
 
     # -----------------------------------------------------
-    # Reference
+    # Reference answer
     # -----------------------------------------------------
 
     st.markdown("### Reference Answer")
@@ -405,7 +393,7 @@ if results:
 
 
     # -----------------------------------------------------
-    # Response
+    # Generated answer
     # -----------------------------------------------------
 
     st.markdown("### Generated Answer")
@@ -422,9 +410,14 @@ if results:
     # Metrics
     # -----------------------------------------------------
 
-    detail_col1, detail_col2, detail_col3, detail_col4 = (
-        st.columns(4)
-    )
+    st.markdown("### RAGAS Scores")
+
+    (
+        detail_col1,
+        detail_col2,
+        detail_col3,
+        detail_col4,
+    ) = st.columns(4)
 
     with detail_col1:
 
@@ -534,25 +527,42 @@ if results:
 
         for citation in citations:
 
+            page_numbers = citation.get(
+                "page_numbers",
+                [],
+            )
+
+            if isinstance(
+                page_numbers,
+                list,
+            ):
+
+                page_text = ", ".join(
+                    str(page)
+                    for page in page_numbers
+                )
+
+            else:
+
+                page_text = str(
+                    page_numbers
+                )
+
             citation_rows.append(
                 {
                     "Chunk ID": citation.get(
                         "chunk_id",
                         "",
                     ),
+                    "Document ID": citation.get(
+                        "document_id",
+                        "",
+                    ),
                     "Document": citation.get(
                         "document_name",
                         "",
                     ),
-                    "Page": ", ".join(
-                        map(
-                            str,
-                            citation.get(
-                                "page_numbers",
-                                [],
-                            ),
-                        )
-                    ),
+                    "Page": page_text,
                     "Content Type": citation.get(
                         "content_type",
                         "",
@@ -602,6 +612,10 @@ if st.button(
 
     st.rerun()
 
+
+# =========================================================
+# Footer
+# =========================================================
 
 st.caption(
     f"Source: {RESULTS_PATH}"

@@ -1,5 +1,4 @@
 import re
-from dataclasses import dataclass
 
 from rank_bm25 import BM25Okapi
 
@@ -10,14 +9,27 @@ class BM25Retriever:
     """
     BM25 lexical retriever.
 
-    Uses the same document chunks as the dense
-    retrieval pipeline.
+    Uses document chunks from Qdrant as its source of truth.
+    The index can be refreshed when new documents are uploaded.
     """
 
     def __init__(
         self,
         documents: list[dict],
     ):
+        self.documents: list[dict] = []
+        self.bm25 = None
+
+        self.refresh(documents)
+
+    def refresh(
+        self,
+        documents: list[dict],
+    ) -> None:
+        """
+        Rebuild the BM25 index from the latest documents.
+        """
+
         self.documents = documents
 
         tokenized_documents = [
@@ -26,6 +38,10 @@ class BM25Retriever:
             )
             for document in documents
         ]
+
+        if not tokenized_documents:
+            self.bm25 = None
+            return
 
         self.bm25 = BM25Okapi(
             tokenized_documents
@@ -38,6 +54,26 @@ class BM25Retriever:
         return re.findall(
             r"\b\w[\w-]*\b",
             text.lower(),
+        )
+    def refresh(
+        self,
+        documents: list[dict],
+    ) -> None:
+        """
+        Rebuild the BM25 index from the latest documents.
+        """
+
+        self.documents = documents
+
+        tokenized_documents = [
+            self._tokenize(
+                document.get("text", "")
+            )
+            for document in documents
+        ]
+
+        self.bm25 = BM25Okapi(
+            tokenized_documents
         )
 
     def retrieve(
@@ -52,7 +88,7 @@ class BM25Retriever:
         if top_k <= 0:
             return []
 
-        if not self.documents:
+        if not self.documents or self.bm25 is None:
             return []
 
         query_tokens = self._tokenize(query)
@@ -110,7 +146,7 @@ class BM25Retriever:
                     section=document.get(
                         "section",
                         metadata.get(
-                            "section"
+                            "section",
                         ),
                     ),
                     page_numbers=document.get(
@@ -137,7 +173,7 @@ class BM25Retriever:
                     table_data=document.get(
                         "table_data",
                         metadata.get(
-                            "table_data"
+                            "table_data",
                         ),
                     ),
                     contains_table=document.get(

@@ -23,7 +23,10 @@ groq
 # RAG evaluation
 ragas
 
-# Web / application
+# Web / API
+fastapi
+uvicorn[standard]
+python-multipart
 streamlit
 
 # Observability

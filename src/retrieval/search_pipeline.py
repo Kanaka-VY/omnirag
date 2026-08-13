@@ -13,7 +13,9 @@ class SearchPipeline:
         query: str,
         candidate_k: int = 20,
         top_k: int = 5,
+        score_threshold: float = 0.0,
     ):
+
         candidates = self.hybrid_retriever.retrieve(
             query=query,
             top_k=candidate_k,
@@ -23,4 +25,5 @@ class SearchPipeline:
             query=query,
             candidates=candidates,
             top_k=top_k,
+            score_threshold=score_threshold,
         )

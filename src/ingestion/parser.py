@@ -1,6 +1,41 @@
 from pathlib import Path
 from typing import Any
 
+import os
+
+# ---------------------------------------------------------
+# Explicit Tesseract configuration
+# ---------------------------------------------------------
+
+TESSERACT_DIR = Path(
+    r"C:\Program Files\Tesseract-OCR"
+)
+
+TESSERACT_EXE = (
+    TESSERACT_DIR / "tesseract.exe"
+)
+
+if TESSERACT_EXE.exists():
+    os.environ["PATH"] = (
+        str(TESSERACT_DIR)
+        + os.pathsep
+        + os.environ.get("PATH", "")
+    )
+
+# Configure the exact pytesseract executable used
+# by Unstructured.
+try:
+    import unstructured_pytesseract.pytesseract as pytesseract
+
+    if TESSERACT_EXE.exists():
+        pytesseract.tesseract_cmd = str(
+            TESSERACT_EXE
+        )
+
+except ImportError:
+    pass
+
+
 from unstructured.partition.pdf import partition_pdf
 
 
@@ -19,8 +54,7 @@ def parse_pdf(
             If True, use high-resolution extraction with
             table and image extraction enabled.
 
-            If False, use the standard PDF partitioning
-            strategy.
+        If False, use standard PDF partitioning.
     """
 
     # ---------------------------------------------------------
@@ -68,7 +102,11 @@ def element_to_dict(element: Any) -> dict:
     JSON-serializable representation.
     """
 
-    metadata = getattr(element, "metadata", None)
+    metadata = getattr(
+        element,
+        "metadata",
+        None,
+    )
 
     return {
         "element_id": getattr(

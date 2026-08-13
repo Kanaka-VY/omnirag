@@ -1,0 +1,22 @@
+services:
+  qdrant:
+    image: qdrant/qdrant
+    container_name: omnirag-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: omnirag-phoenix
+    ports:
+      - "6006:6006"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - PHOENIX_PORT=6006
+
+volumes:
+  qdrant_storage:

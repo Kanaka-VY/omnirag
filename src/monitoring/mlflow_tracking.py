@@ -3,14 +3,21 @@ from typing import Any
 
 
 EXPERIMENT_NAME = "OmniRAG-RAG-Pipeline"
+MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
 
 
 def setup_mlflow() -> None:
     """
     Configure the MLflow experiment used by OmniRAG.
     """
-    mlflow.set_experiment(EXPERIMENT_NAME)
 
+    mlflow.set_tracking_uri(
+        MLFLOW_TRACKING_URI
+    )
+
+    mlflow.set_experiment(
+        EXPERIMENT_NAME
+    )
 
 def start_rag_run(
     query: str,
@@ -108,3 +115,109 @@ def end_rag_run() -> None:
     """
     if mlflow.active_run() is not None:
         mlflow.end_run()
+
+def start_ragas_evaluation_run(
+    num_records: int,
+    evaluator_model: str | None = None,
+    embedding_model: str | None = None,
+    retrieval_type: str | None = None,
+    reranker: str | None = None,
+):
+    """
+    Start an MLflow run for a RAGAS evaluation.
+    """
+
+    run = mlflow.start_run(
+        run_name="RAGAS Evaluation"
+    )
+
+    mlflow.log_param(
+        "evaluation_type",
+        "RAGAS",
+    )
+
+    mlflow.log_param(
+        "num_records",
+        num_records,
+    )
+
+    if evaluator_model is not None:
+        mlflow.log_param(
+            "evaluator_model",
+            evaluator_model,
+        )
+
+    if embedding_model is not None:
+        mlflow.log_param(
+            "embedding_model",
+            embedding_model,
+        )
+
+    if retrieval_type is not None:
+        mlflow.log_param(
+            "retrieval_type",
+            retrieval_type,
+        )
+
+    if reranker is not None:
+        mlflow.log_param(
+            "reranker",
+            reranker,
+        )
+
+    return run
+
+
+def log_ragas_metrics(
+    faithfulness: float,
+    context_precision: float,
+    context_recall: float,
+    answer_relevancy: float,
+) -> None:
+    """
+    Log aggregate RAGAS evaluation metrics.
+    """
+
+    mlflow.log_metric(
+        "ragas_faithfulness",
+        faithfulness,
+    )
+
+    mlflow.log_metric(
+        "ragas_context_precision",
+        context_precision,
+    )
+
+    mlflow.log_metric(
+        "ragas_context_recall",
+        context_recall,
+    )
+
+    mlflow.log_metric(
+        "ragas_answer_relevancy",
+        answer_relevancy,
+    )
+
+    # Overall mean across the four RAGAS metrics.
+    mean_score = (
+        faithfulness
+        + context_precision
+        + context_recall
+        + answer_relevancy
+    ) / 4.0
+
+    mlflow.log_metric(
+        "ragas_mean_score",
+        mean_score,
+    )
+def log_rag_response(
+    answer: str,
+) -> None:
+    """
+    Log the generated RAG response as an MLflow tag.
+    """
+
+    mlflow.set_tag(
+        "rag_response",
+        answer,
+    )

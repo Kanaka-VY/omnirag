@@ -70,3 +70,7 @@ data/evaluation/results/
 
 # Streamlit
 .streamlit/
+
+# Local evaluation outputs
+data/evaluation/evaluation_records.json
+data/evaluation/results/

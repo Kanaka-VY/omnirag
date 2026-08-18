@@ -133,14 +133,10 @@ curl http://localhost:8000/health
 
 ---
 
-# Step 8 — Screenshots
+# Screenshots
 
-This is **very important for your GitHub project**.
-
-Add screenshots of:
 
 1. **Streamlit OmniRAG UI**
-
 2. **Document upload**
 3. **Chat answer**
 4. **Citation/source information**
@@ -150,7 +146,7 @@ Add screenshots of:
 7. **RAGAS dashboard**
 8. **GitHub Actions CI passing**
 
-Put them under:
+
 
 ```markdown
 ## 📸 Screenshots

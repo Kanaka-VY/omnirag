@@ -196,7 +196,7 @@ if __name__ == "__main__":
             "num_records"
         ],
         evaluator_model=(
-            "llama-3.1-8b-instant"
+            "openai/gpt-oss-20b"
         ),
         embedding_model=(
             "sentence-transformers/"

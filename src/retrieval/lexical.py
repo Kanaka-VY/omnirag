@@ -39,6 +39,8 @@ class BM25Retriever:
             for document in documents
         ]
 
+        # Qdrant may be empty when the application starts.
+        # BM25Okapi cannot build an index from an empty corpus.
         if not tokenized_documents:
             self.bm25 = None
             return
@@ -54,26 +56,6 @@ class BM25Retriever:
         return re.findall(
             r"\b\w[\w-]*\b",
             text.lower(),
-        )
-    def refresh(
-        self,
-        documents: list[dict],
-    ) -> None:
-        """
-        Rebuild the BM25 index from the latest documents.
-        """
-
-        self.documents = documents
-
-        tokenized_documents = [
-            self._tokenize(
-                document.get("text", "")
-            )
-            for document in documents
-        ]
-
-        self.bm25 = BM25Okapi(
-            tokenized_documents
         )
 
     def retrieve(

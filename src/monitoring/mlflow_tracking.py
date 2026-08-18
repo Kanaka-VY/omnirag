@@ -1,10 +1,14 @@
+
+import os
 import mlflow
 from typing import Any
 
 
 EXPERIMENT_NAME = "OmniRAG-RAG-Pipeline"
-MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
-
+MLFLOW_TRACKING_URI = os.getenv(
+    "MLFLOW_TRACKING_URI",
+    "sqlite:///mlflow.db",
+)
 
 def setup_mlflow() -> None:
     """

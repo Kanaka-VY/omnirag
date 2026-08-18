@@ -5,6 +5,8 @@ python-dotenv
 unstructured
 pypdf
 python-magic
+pytesseract
+unstructured.pytesseract
 
 # Embeddings / ML
 sentence-transformers
@@ -35,8 +37,15 @@ arize-phoenix-otel
 openinference-instrumentation
 openinference-instrumentation-groq
 
+# OpenCV
+opencv-python-headless==4.12.0.88
+
 # MLOps
 mlflow
 
 # Testing
 pytest
+pdf2image
+pdfminer.six
+pi-heif
+unstructured-inference

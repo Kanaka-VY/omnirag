@@ -5,7 +5,11 @@ from src.retrieval.reranker import (
 
 class FakeModel:
 
-    def predict(self, pairs):
+    def predict(
+        self,
+        pairs,
+        show_progress_bar=False,
+    ):
         return [
             0.2,
             0.9,
@@ -30,6 +34,7 @@ def test_reranker_sorts_by_score():
     reranker = object.__new__(
         CrossEncoderReranker
     )
+    reranker.score_threshold = float("-inf")
 
     reranker.model = FakeModel()
 

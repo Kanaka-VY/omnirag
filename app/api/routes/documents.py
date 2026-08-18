@@ -9,7 +9,7 @@ from src.ingestion.pipeline import process_pdf
 from src.vectorstore.client import get_qdrant_client
 from src.vectorstore.repository import QdrantRepository
 from src.evaluation.rag_runner import refresh_retrieval_index
-
+from src.config.settings import QDRANT_COLLECTION
 
 router = APIRouter(
     prefix="/api/documents",

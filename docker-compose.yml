@@ -16,7 +16,60 @@ services:
       - "4317:4317"
       - "4318:4318"
     environment:
-      - PHOENIX_PORT=6006
+      PHOENIX_PORT: 6006
+
+  mlflow:
+    image: python:3.12-slim
+    container_name: omnirag-mlflow
+    command: >
+      sh -c "
+      pip install --no-cache-dir mlflow &&
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root /mlflow/artifacts
+      --allowed-hosts 'mlflow:5000,localhost:5000,127.0.0.1:5000'
+      "
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omnirag-api
+    ports:
+      - "8000:8000"
+    environment:
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:4317
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    depends_on:
+      - qdrant
+      - phoenix
+      - mlflow
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omnirag-ui
+    command: >
+      streamlit run app/ui/streamlit_app.py
+      --server.address=0.0.0.0
+      --server.port=8501
+    ports:
+      - "8501:8501"
+    environment:
+      API_BASE_URL: http://api:8000
+    depends_on:
+      - api
 
 volumes:
   qdrant_storage:
+  mlflow_data:

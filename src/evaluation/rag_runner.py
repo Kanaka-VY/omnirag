@@ -66,7 +66,13 @@ _repository = QdrantRepository(
     collection_name=QDRANT_COLLECTION,
     vector_size=_embedding_model.dimension(),
 )
+_repository = QdrantRepository(
+    client=_qdrant_client,
+    collection_name=QDRANT_COLLECTION,
+    vector_size=_embedding_model.dimension(),
+)
 
+_repository.create_collection()
 
 # ---------------------------------------------------------
 # Dense semantic retriever

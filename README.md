@@ -445,7 +445,6 @@ curl http://localhost:8000/health
 
 # 📸 Screenshots
 
-[![RAGAS Metric Comparison](./assets/ragas-metric-comparison.png)](https://raw.githubusercontent.com/Kanaka-VY/omnirag/main/assets/ragas-metric-comparison.png)
 
 ## 📊 RAGAS Evaluation Dashboard
 
@@ -656,6 +655,8 @@ The objective is to move beyond a basic RAG chatbot toward a **measurable, obser
 [![Open Phoenix](https://img.shields.io/badge/🔭%20Open%20Phoenix-6E40C9?style=for-the-badge)](http://localhost:6006/projects?timeRangeKey=7d)
 
 [![Open MLflow](https://img.shields.io/badge/📈%20Open%20MLflow-0194E2?style=for-the-badge)](http://localhost:5000/)
+
+🔗 [📚 Open FastAPI Docs](http://localhost:8000/docs)
 
 
 # 👩‍💻 Author

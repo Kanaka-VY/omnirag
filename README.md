@@ -62,13 +62,13 @@ The platform also integrates **LLMOps and MLOps practices** for evaluation, obse
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Architecture Overview
 
-OmniRAG follows a production-oriented multimodal RAG architecture combining document ingestion, structure-aware processing, multimodal embeddings, hybrid retrieval, reranking, grounded generation, and LLMOps/MLOps observability.
-
-[![OmniRAG Multimodal Enterprise RAG Architecture](./assets/omnirag-architecture.png)](./assets/omnirag-architecture.png)
-
----
+<img
+  src="./assets/omnirag-architecture.png"
+  alt="OmniRAG Multimodal Enterprise RAG Architecture"
+  width="100%"
+/>
 
 # 🔄 RAG Pipeline
 

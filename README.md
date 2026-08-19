@@ -445,37 +445,21 @@ curl http://localhost:8000/health
 
 # 📸 Screenshots
 
-## 🖥️ OmniRAG Streamlit UI
+## 📊 RAGAS Evaluation Dashboard
 
-<img src="./assets/streamlit-ui.png" alt="OmniRAG Streamlit User Interface" width="100%">
+![RAGAS Evaluation Dashboard](assets/ragas-evaluation-dashboard.png)
 
-## 📄 Multimodal Document Upload
+## 📈 RAGAS Metric Comparison
 
-<img src="./assets/document-upload.png" alt="OmniRAG Document Upload" width="100%">
+![RAGAS Metric Comparison](assets/ragas-metric-comparison.png)
 
-## 💬 Grounded Chat Answer
+## 🔭 Arize Phoenix Observability
 
-<img src="./assets/chat-answer.png" alt="OmniRAG Grounded Chat Answer" width="100%">
-
-## 📚 Source Citations
-
-<img src="./assets/citations.png" alt="OmniRAG Source Citations" width="100%">
-
-## 🔭 Arize Phoenix Trace
-
-<img src="./assets/phoenix-trace.png" alt="Arize Phoenix RAG Trace" width="100%">
+![Arize Phoenix Dashboard](assets/phoenix-observability-dashboard.png)
 
 ## 📈 MLflow Experiment Tracking
 
-<img src="./assets/mlflow.png" alt="MLflow Experiment Tracking" width="100%">
-
-## 📊 RAGAS Evaluation Dashboard
-
-<img src="./assets/ragas-dashboard.png" alt="OmniRAG RAGAS Evaluation Dashboard" width="100%">
-
-## ⚙️ GitHub Actions CI/CD
-
-<img src="./assets/github-actions.png" alt="GitHub Actions CI Pipeline" width="100%">
+![MLflow Experiment Tracking](assets/mlflow-experiment-tracking.png)
 
 ---
 

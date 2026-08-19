@@ -1,4 +1,4 @@
-# 🚀 OmniRAG — Multimodal Enterprise RAG Platform
+#                            🚀 OmniRAG — Multimodal Enterprise RAG Platform
 
 OmniRAG is a production-oriented **multimodal Retrieval-Augmented Generation (RAG) platform** designed for intelligent document understanding, semantic search, grounded question answering, and enterprise knowledge retrieval.
 
@@ -8,7 +8,7 @@ The platform also integrates **LLMOps and MLOps practices** for evaluation, obse
 
 ---
 
-## 🌐 Live Dashboards
+##                                  🌐 Live Dashboards
 
 [![Open Streamlit](https://img.shields.io/badge/🚀%20Open%20Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](http://localhost:8501/)
 
@@ -40,7 +40,7 @@ The platform also integrates **LLMOps and MLOps practices** for evaluation, obse
 
 ---
 
-# 🚀 Key Features
+#                                        🚀 Key Features
 
 | Feature                        | Description                                                                     |
 | ------------------------------ | ------------------------------------------------------------------------------- |

@@ -665,7 +665,7 @@ The objective is to move beyond a basic RAG chatbot toward a **measurable, obser
 
 # 👩‍💻 Author
 
-**Rakshitha**
+**Kanaka V Y**
 
 Artificial Intelligence & Machine Learning Engineer
 
@@ -680,8 +680,3 @@ Artificial Intelligence & Machine Learning Engineer
 * MLOps
 * LLMOps
 
----
-
-## ⭐ Support
-
-If you find this project useful, consider giving the repository a ⭐ star.

@@ -445,7 +445,7 @@ curl http://localhost:8000/health
 
 # 📸 Screenshots
 
-## 📊 RAGAS Evaluation Dashboard
+[![RAGAS Metric Comparison](./assets/ragas-metric-comparison.png)](https://raw.githubusercontent.com/Kanaka-VY/omnirag/main/assets/ragas-metric-comparison.png)
 
 ## 📊 RAGAS Evaluation Dashboard
 

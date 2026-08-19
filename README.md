@@ -16,7 +16,7 @@ The platform also integrates **LLMOps and MLOps practices** for evaluation, obse
 
 [![Open MLflow](https://img.shields.io/badge/📈%20Open%20MLflow-0194E2?style=for-the-badge)](http://localhost:5000/)
 
-🔗 [📚 Open FastAPI Docs](http://localhost:8000/docs)
+[![📚 Open FastAPI Docs](http://localhost:8000/docs)
 
 ## ✨ Key Highlights
 
@@ -66,9 +66,11 @@ The platform also integrates **LLMOps and MLOps practices** for evaluation, obse
 
 OmniRAG follows a multimodal RAG architecture combining document processing, structure-aware chunking, multimodal embeddings, hybrid retrieval, reranking, grounded generation, and LLMOps/MLOps monitoring.
 
-## Architecture Overview
+## 🏗️ System Architecture
 
-<img src="./assets/omnirag-architecture.png" alt="OmniRAG Multimodal Enterprise RAG Architecture" width="100%">
+OmniRAG follows a production-oriented multimodal RAG architecture combining document ingestion, structure-aware processing, multimodal embeddings, hybrid retrieval, reranking, grounded generation, and LLMOps/MLOps observability.
+
+[![OmniRAG Multimodal Enterprise RAG Architecture](./assets/omnirag-architecture.png)](./assets/omnirag-architecture.png)
 
 ---
 

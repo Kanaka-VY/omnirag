@@ -141,7 +141,6 @@ curl http://localhost:8000/health
 3. **Chat answer**
 4. **Citation/source information**
 5. **Phoenix trace**
-
 6. **MLflow experiment**
 7. **RAGAS dashboard**
 8. **GitHub Actions CI passing**

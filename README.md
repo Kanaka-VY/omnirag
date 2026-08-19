@@ -447,19 +447,21 @@ curl http://localhost:8000/health
 
 ## 📊 RAGAS Evaluation Dashboard
 
-[![RAGAS Evaluation Dashboard](assets/ragas-evaluation-dashboard.png)](assets/ragas-evaluation-dashboard.png)
+## 📊 RAGAS Evaluation Dashboard
+
+[![RAGAS Evaluation Dashboard](./assets/ragas-evaluation-dashboard.png)](https://raw.githubusercontent.com/Kanaka-VY/omnirag/main/assets/ragas-evaluation-dashboard.png)
 
 ## 📈 RAGAS Metric Comparison
 
-[![RAGAS Metric Comparison](assets/ragas-metric-comparison.png)](assets/ragas-metric-comparison.png)
+[![RAGAS Metric Comparison](./assets/ragas-metric-comparison.png)](https://raw.githubusercontent.com/Kanaka-VY/omnirag/main/assets/ragas-metric-comparison.png)
 
 ## 🔭 Arize Phoenix Observability
 
-[![Phoenix Observability Dashboard](assets/phoenix-observability-dashboard.png)](assets/phoenix-observability-dashboard.png)
+[![Phoenix Observability Dashboard](./assets/phoenix-observability-dashboard.png)](https://raw.githubusercontent.com/Kanaka-VY/omnirag/main/assets/phoenix-observability-dashboard.png)
 
 ## 📈 MLflow Experiment Tracking
 
-[![MLflow Experiment Tracking](assets/mlflow-experiment-tracking.png)](assets/mlflow-experiment-tracking.png)
+[![MLflow Experiment Tracking](./assets/mlflow-experiment-tracking.png)](https://raw.githubusercontent.com/Kanaka-VY/omnirag/main/assets/mlflow-experiment-tracking.png)
 
 ---
 

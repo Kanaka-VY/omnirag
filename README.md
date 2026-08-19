@@ -649,6 +649,15 @@ The objective is to move beyond a basic RAG chatbot toward a **measurable, obser
 
 ---
 
+## 🌐 Live Dashboards
+
+[![Open Streamlit](http://localhost:8501/)
+
+[![Open Phoenix](http://localhost:6006/projects?timeRangeKey=7d)
+
+[![Open MLflow](http://localhost:5000/)
+
+
 # 👩‍💻 Author
 
 **Kanaka V Y**

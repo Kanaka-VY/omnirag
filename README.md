@@ -137,6 +137,7 @@ curl http://localhost:8000/health
 
 
 1. **Streamlit OmniRAG UI**
+
 2. **Document upload**
 3. **Chat answer**
 4. **Citation/source information**
@@ -145,7 +146,6 @@ curl http://localhost:8000/health
 7. **RAGAS dashboard**
 8. **GitHub Actions CI passing**
 
-
-
-```markdown
 ## 📸 Screenshots
+<img width="1280" height="853" alt="image" src="https://github.com/user-attachments/assets/6bb53b84-bb82-4c40-a683-31a3b7cc634d" />
+

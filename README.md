@@ -8,6 +8,16 @@ The platform also integrates **LLMOps and MLOps practices** for evaluation, obse
 
 ---
 
+## 🌐 Live Dashboards
+
+[![Open Streamlit](https://img.shields.io/badge/🚀%20Open%20Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](http://localhost:8501/)
+
+[![Open Phoenix](https://img.shields.io/badge/🔭%20Open%20Phoenix-6E40C9?style=for-the-badge)](http://localhost:6006/projects?timeRangeKey=7d)
+
+[![Open MLflow](https://img.shields.io/badge/📈%20Open%20MLflow-0194E2?style=for-the-badge)](http://localhost:5000/)
+
+🔗 [📚 Open FastAPI Docs](http://localhost:8000/docs)
+
 ## ✨ Key Highlights
 
 * 📄 Multimodal document ingestion
@@ -647,16 +657,6 @@ OmniRAG was designed to demonstrate how a production-oriented RAG system can com
 The objective is to move beyond a basic RAG chatbot toward a **measurable, observable, testable, and production-oriented enterprise RAG platform**.
 
 ---
-
-## 🌐 Live Dashboards
-
-[![Open Streamlit](https://img.shields.io/badge/🚀%20Open%20Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](http://localhost:8501/)
-
-[![Open Phoenix](https://img.shields.io/badge/🔭%20Open%20Phoenix-6E40C9?style=for-the-badge)](http://localhost:6006/projects?timeRangeKey=7d)
-
-[![Open MLflow](https://img.shields.io/badge/📈%20Open%20MLflow-0194E2?style=for-the-badge)](http://localhost:5000/)
-
-🔗 [📚 Open FastAPI Docs](http://localhost:8000/docs)
 
 
 # 👩‍💻 Author
